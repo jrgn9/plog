@@ -1,6 +1,6 @@
-# PLOG 
-![Image](./plow.png "Plog")
-Plog is a command line tool for creating project logs and entries from CLI. Keep track of projects by having simple log files. Perfect for large school projects that require progress documentation. Written in Bash.
+# plog
+
+Plog is a command line tool for creating project logs and entries from CLI. Keep track of projects by having simple log files. Perfect for large school projects that require progress documentation. Written in Bash.![Image](./plog.png "Plog")
 
 ## How to use
 Something here sometime.
