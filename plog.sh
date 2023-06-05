@@ -1,5 +1,7 @@
 #! /bin/bash
 
+## Add help here later
+
 # Checks if a log file exists
 if ! [ -f ./*.log ]
 then
@@ -31,7 +33,7 @@ then
 fi
 '
 
-echo "Enter log entry. A Nano text editor will open shortly"
+echo -e "Enter log entry. A Nano text editor will open shortly \nCtrl+S to save, Ctrl+X to quit"
 sleep 3
 #read -r entry
 
@@ -49,3 +51,8 @@ rm "$tmpfile"
 
 echo "your input was:"
 echo "$entry"
+
+timestamp=$(date +"%d.%m.%Y %H:%M:%S")
+echo "current time: $timestamp"
+
+echo -e "$timestamp\nTitle?\n$entry" >> *.log
