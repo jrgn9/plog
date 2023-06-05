@@ -1,5 +1,5 @@
 
-<img align="right" height="125" src="./plog.png">
+<img align="right" height="256" src="./plog.png">
 
 # plog
     
