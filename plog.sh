@@ -2,7 +2,7 @@
 
 if ! [ -f ./*.log ]
 then
-	echo "No log file detected \n
+	echo -e "No log file detected \n
 	Enter name for new log file (default: p.log)"
 	read filename
 	echo "Creating file $filename.log in current directory"
@@ -11,8 +11,18 @@ then
 	#some start text/metadata here
 fi
 
-echo "Enter entry title (not mandatory. Default: None"
-read input_title
-if [ $1 ]
+: '
+Might delete title. Not sure yet
 
-echo ""
+echo "Enter entry title (not mandatory. Default: None) - Ctrl+D to finish"
+read -r input_title
+if [ "$input_title" -ne "" ]
+then
+	title=$input_title
+fi
+'
+
+echo "Enter log entry. Multi-line is supported (Ctrl+D to finish)"
+read -r entry
+
+
