@@ -19,7 +19,21 @@ then
 	echo "Creating file $filename.log in current directory"
 	touch "$filename.log"
 
-	#some start text/metadata here
+	# Adding start of the document by using Here Document for multi-line
+	init=$(cat <<-EOF
+	****************************************
+	THIS IS A LOG FILE CREATED BY PLOG
+	IN TERMINAL: 'plog --help' FOR HELP MENU
+	OR SEE README FOR DOCUMENTATION
+	****************************************
+	\n
+	EOF
+	)
+	
+	# Adds the init message to the log file
+	echo -e "$init" > $filename.log
+
+	#### Might add prompt for title and description for start of the log
 fi
 
 : '
@@ -34,7 +48,7 @@ fi
 '
 
 echo -e "Enter log entry. A Nano text editor will open shortly \nCtrl+S to save, Ctrl+X to quit"
-sleep 3
+sleep 1.5
 #read -r entry
 
 # Creates a temporary file for log entry
@@ -53,6 +67,5 @@ echo "your input was:"
 echo "$entry"
 
 timestamp=$(date +"%d.%m.%Y %H:%M:%S")
-echo "current time: $timestamp"
 
-echo -e "$timestamp\nTitle?\n$entry" >> *.log
+echo -e "$timestamp\nTitle?\n$entry\n\n***\n" >> *.log
