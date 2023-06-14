@@ -1,7 +1,8 @@
 plog is a command line tool for creating project logs.
-If there is no .log file present, one will be created in current directory.
+If a .log file does not exist then one will be created in current directory.
 Default name is p.log
-(cannot have more than one .log file per directory??)
+
+NOTE: There cannot be more than one .log file per directory (except for backup.log)
 
 Usage:	plog [option]
 No options: Opens a nano editor for writing longer log entries
@@ -9,6 +10,7 @@ Options:
 -h	--help		Display this help message
 -m	--msg		Write short message without entering nano. Must be in "quotes"
 -dl	--dlast		Delete last entry. Creates backup which will be deleted at next entry
+-r	--revert	Revert log file to the backup
 
 Might add:
 -a	--author	Sets author in settings to not be prompted each time.
