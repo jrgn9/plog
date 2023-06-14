@@ -8,8 +8,23 @@ then
 	exit 0
 fi
 
-## Checks if a log file exists
-if ! [ -f ./*.log ]
+## Error handling for logs
+logs=$(find . -name "*.log" -not -name "backup.log")
+
+# Counts the number of files found
+file_count=$(echo "$logs" | wc -l)
+	
+# Error handling if there are multiple .log files
+if [ "$file_count" -gt 1 ]
+then
+	# Multiple files found, display error and quit
+	echo "Error: Multiple log files found."
+	echo "plog can only handle one .log file in current directory"
+	echo "Please ensure that there is only one other .log file besides backup.log"
+	exit 1
+
+elif [ "$file_count" -eq 0 ]
+# Checks if a log file exists
 then
 	# Prompts user for file name
 	echo -e "No log file detected \nEnter name for new log file (default: p.log)"
@@ -42,6 +57,9 @@ then
 	#### Might add prompt for title and description for start of the log
 fi
 
+## Finds log file
+logfile=$(find . -name "*.log" -not -name "backup.log")
+
 : '
 Might delete title. Not sure yet
 
@@ -57,50 +75,29 @@ fi
 # Delete last entry flag
 if [ "$1" = "--dlast" -o "$1" = "-dl" ]
 then
-	# Creates a backup before removing last entry
-	cp "*.log" "backup.log"
-	
-	# Sets file to be any log file that is not the backup
-	file=($(find . -name "*.log" -not -name "backup.log"))
 
-	# Removes entry from last up until end of last entry
-	sed -i '$,/^\*\*\*/d' "$file"
+	# Creates a backup before removing last entry
+	cp "$logfile" backup.log
+
+	# Removes entry from last up until end of previous entry
+	sed -i '$,/^\*\*\*/d' "$logfile"
 
 # Revert to backup flag
 elif [ "$1" = "--revert" -o "$1" = "-r" ]
 then
-	# Finds the name of the original file
-	original_file=$(find . -name "*.log" -not -name "backup.log")
-
-	# Counts the number of files found
-	file_count=$(echo "$original_file" | wc -l)
-	
-	# Error handling if there are multiple .log files
-	if [ "$file_count" -eq 1 ]
-	then
-		# Single file found, proceed with the reverting
-		original_file=$(echo "$original_file" | tr -d '\n') # removes newline char
-
-		# Overwrite the other file with the backup file
-		mv backup.log "$original_file"
-		echo "Backup is restored to $original_file"
-	else
-		# Multiple files found, display error and quit
-		echo "Error: Multiple log files found."
-		echo "plog can only handle one .log file in current directory"
-		echo "Please ensure that there is only one other .log file besides backup.log"
-		exit 1
-	fi
+	# Overwrite the other file with the backup file
+	mv backup.log "$logfile"
+	echo "Backup is restored to $logfile"
 
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then
 	# Coming soon
-
-# No flags detected
+	rm -f backup.log
 else
+	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
-	rm -f "backup.log"
+	rm -f backup.log
 	echo -e "Enter log entry. A Nano text editor will open shortly \nCtrl+S to save, Ctrl+X to quit"
 	sleep 1.5
 
@@ -116,12 +113,10 @@ else
 	# Removes the temporary file
 	rm "$tmpfile"
 fi
-#echo "your input was:"
-#echo "$entry"
 
 # Creates timestamp in the format dd.mm.yyyy hh:mm:ss
 timestamp=$(date +"%d.%m.%Y %H:%M:%S")
 
 # Redirects the log entry to the log file
 # Might add title, not sure
-echo -e "\n$timestamp\n$entry\n\n***" >> *.log
+echo -e "\n$timestamp\n$entry\n\n***" >> "$logfile"
