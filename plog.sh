@@ -63,9 +63,12 @@ entry=$(cat "$tmpfile")
 # Removes the temporary file
 rm "$tmpfile"
 
-echo "your input was:"
-echo "$entry"
+#echo "your input was:"
+#echo "$entry"
 
+# Creates timestamp in the format dd.mm.yyyy hh:mm:ss
 timestamp=$(date +"%d.%m.%Y %H:%M:%S")
 
-echo -e "$timestamp\nTitle?\n$entry\n\n***\n" >> *.log
+# Redirects the log entry to the log file
+# Might add title, not sure
+echo -e "$timestamp\n$entry\n\n***\n" >> *.log
