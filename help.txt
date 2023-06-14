@@ -1,1 +1,14 @@
-Here there will be a help text to print when prompting --help / -h flag
+plog is a command line tool for creating project logs.
+If there is no .log file present, one will be created in current directory.
+Default name is p.log
+(cannot have more than one .log file per directory??)
+
+Usage:	plog [option]
+No options: Opens a nano editor for writing longer log entries
+Options:
+-h	--help		Display this help message
+-m	--msg		Write short message without entering nano. Must be in "quotes"
+-dl	--dlast		Delete last entry. Creates backup which will be deleted at next entry
+
+Might add:
+-a	--author	Sets author in settings to not be prompted each time.
