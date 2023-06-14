@@ -1,8 +1,14 @@
 #! /bin/bash
 
-## Add help here later
+## Checks if help flag is present
+if [ "$1" = "--help" -o "$1" = "-h" ]
+then
+	# Prints help message and exits
+	echo "$(cat ./help.txt)"
+	exit 0
+fi
 
-# Checks if a log file exists
+## Checks if a log file exists
 if ! [ -f ./*.log ]
 then
 	# Prompts user for file name
