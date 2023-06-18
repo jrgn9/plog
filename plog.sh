@@ -60,7 +60,6 @@ fi
 
 ## Set logfile to be the file found in current directory
 logfile=$(find . -name "*.log" -not -name "backup.log")
-#logfile=$logs
 
 : '
 Might delete title. Not sure yet
@@ -82,11 +81,21 @@ then
 	cp "$logfile" backup.log
 
 	# Removes entry from last up until end of previous entry by using a loop
-	# sed -i -e :a -e '$!N; $!ba' -e '/^\*\*\*/,$d' "$logfile"
-	# sed -i '/^\*\*\*$/,/^\*\*\*$/d' "$logfile"
-	# sed -i '$!N; /^\*\*\*\n$/!P; D' "$logfile"
-	# sed -i '/^\*\*\*$/,/^.*$/d' "$logfile"
-	tac "$logfile" | sed '/^\*\*\*$/,/^.*\*\*\*$/d' | tac > tmpfile && mv tmpfile "$logfile"
+	
+	### Deletes every entry
+	#sed -i -e :a -e '$!N; $!ba' -e '/^\*\*\*/,$d' "$logfile"
+	
+	### Deletes every *** and the entries in the middle
+	#sed -i '/^\*\*\*$/,/^\*\*\*$/d' "$logfile"
+	
+	### Deletes every *** except the last
+	#sed -i '$!N; /^\*\*\*\n$/!P; D' "$logfile"
+	
+	### Deletes every *** in the document
+	#sed -i '/^\*\*\*$/,/^.*$/d' "$logfile"
+	
+	### Deletes the last entry and every *** as well as some entries in between
+	#tac "$logfile" | sed '/^\*\*\*$/,/^.*\*\*\*$/d' | tac > tmpfile && mv tmpfile "$logfile"
 	exit 0
 
 # Revert to backup flag
