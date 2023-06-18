@@ -9,13 +9,14 @@ then
 fi
 
 ## Error handling for logs
+# Finds all .log files except backup.log
 logs=$(find . -name "*.log" -not -name "backup.log")
 
 # Counts the number of files found
 file_count=$(echo "$logs" | wc -l)
 	
 # Error handling if there are multiple .log files
-if [ "$file_count" -gt 1 ]
+if [ "$file_count" -gt 1 ]
 then
 	# Multiple files found, display error and quit
 	echo "Error: Multiple log files found."
@@ -23,8 +24,8 @@ then
 	echo "Please ensure that there is only one other .log file besides backup.log"
 	exit 1
 
-elif [ "$file_count" -eq 0 ]
-# Checks if a log file exists
+elif [ -z "$logs" ]
+# Error handling If there are no log files
 then
 	# Prompts user for file name
 	echo -e "No log file detected \nEnter name for new log file (default: p.log)"
@@ -57,8 +58,9 @@ then
 	#### Might add prompt for title and description for start of the log
 fi
 
-## Finds log file
+## Set logfile to be the file found in current directory
 logfile=$(find . -name "*.log" -not -name "backup.log")
+#logfile=$logs
 
 : '
 Might delete title. Not sure yet
@@ -79,8 +81,13 @@ then
 	# Creates a backup before removing last entry
 	cp "$logfile" backup.log
 
-	# Removes entry from last up until end of previous entry
-	sed -i '$,/^\*\*\*/d' "$logfile"
+	# Removes entry from last up until end of previous entry by using a loop
+	# sed -i -e :a -e '$!N; $!ba' -e '/^\*\*\*/,$d' "$logfile"
+	# sed -i '/^\*\*\*$/,/^\*\*\*$/d' "$logfile"
+	# sed -i '$!N; /^\*\*\*\n$/!P; D' "$logfile"
+	# sed -i '/^\*\*\*$/,/^.*$/d' "$logfile"
+	tac "$logfile" | sed '/^\*\*\*$/,/^.*\*\*\*$/d' | tac > tmpfile && mv tmpfile "$logfile"
+	exit 0
 
 # Revert to backup flag
 elif [ "$1" = "--revert" -o "$1" = "-r" ]
@@ -88,11 +95,13 @@ then
 	# Overwrite the other file with the backup file
 	mv backup.log "$logfile"
 	echo "Backup is restored to $logfile"
+	exit 0
 
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then
 	# Coming soon
+	# Removes backup if there is one from previously deleting last entry
 	rm -f backup.log
 else
 	# No flags detected
