@@ -1,0 +1,138 @@
+# Project for making plog.sh and plog.ps1 - A script for creating project logs (like git commits) in bash terminal and powershell terminals
+
+# Make sure to create nice documentation in Github
+
+# Create a bash script with echo and read to prompt user
+'''
+#!/bin/bash
+
+# Prompt the user for input
+echo "Enter a message:"
+read message
+
+# Display the input
+echo "You entered: $message"
+'́''
+
+#BASH
+# Script must be run with sudo the first time - Adds plog.sh to /usr/local/bin to make it global (for user) (can it just be named plog?)
+# Remember chmod!!
+# If statement to check if a .log file exists in current directory
+# if not -> Prompt user for name for .log file (default p.log)
+# Then create .log file (in cd) with some start text directed to the file with some metadata like start time, project title, etc. (and line shift)
+# For each entry there is first a timestamp with date and time
+# User is prompted for title (default is none or something?)
+# User is prompted for author (default is 'whois') <- Some way to remember author???
+# User is prompted for log entry:
+	# read -r input for multi-line input -> finish with Ctrl+D
+# Finish with line shift for the next entry (or start a new one with line shift?)
+
+#POWERSHELL
+# Same stuff as above but with args[0] and Read-Host, etc. - Check how to!
+# To make global (need to have in documentation):
+	# Locate the directory where your PowerShell script is saved.
+	# Open the "System Properties" dialog by right-clicking on "This PC" (or "My Computer") and selecting "Properties".
+	# Click on "Advanced system settings" on the left side of the window.	
+	# In the "System Properties" window, click on the "Environment Variables" button.
+	# In the "Environment Variables" window, scroll down to the "System variables" section and find the "Path" variable. Select it and click on the "Edit" 			
+		button.
+	# In the "Edit Environment Variable" window, click on the "New" button and enter the full path to the directory where your PowerShell script is located. 
+		Click "OK" to save the changes.
+
+#MACOS
+# To make global:
+	# placing it in a directory that is already included in the system's "PATH" environment variable, such as /usr/local/bin. However, in recent versions of 
+		macOS, the /usr/local/bin directory is no longer included in the default "PATH" variable. 
+	# You can manually add it to the "PATH" variable or modify the "PATH" variable to include the directory where your script is located.
+	# CHECK HOW TO
+	
+# MAYBE HAVE SEPERATE SETUP FILES LIKE MACSETUP.SH, LINUXSETUP.SH AND WINDOWSSETUP.PS1?
+# CREATE --HELP and flags:
+	# if [ "$1" = "--help" ]; then
+	# flags etc..
+	# In POWERSHELL: $args[0] and | FOREACH-Object { Write-Output "Argument: $_"
+
+# EXAMPLE FOR HELP MENU:
+'''
+#!/bin/bash
+
+if [ "$1" = "--help" ]; then
+    echo "Usage: script.sh [options]"
+    echo "Options:"
+    echo "  --help    Display this help message"
+    echo "  -a        Perform action A"
+    echo "  -b        Perform action B"
+    exit 0
+fi
+
+# Rest of the script
+
+
+# myscript.ps1
+if ($args[0] -eq "--help") {
+    Write-Output "Usage: myscript.ps1 [options]"
+    Write-Output "Options:"
+    Write-Output "  --help    Display this help message"
+    Write-Output "  -a        Perform action A"
+    Write-Output "  -b        Perform action B"
+    exit
+}
+
+# Rest of the script
+
+Again, you can customize the help message and add more options as needed.
+'''
+
+# EXAMPLE FOR SAVING USERNAME
+'''
+#!/bin/bash
+
+# Path to the file storing the username
+USERNAME_FILE="/path/to/username.txt"
+
+if [ "$1" = "--set-username" ]; then
+    # Set the username from the command line argument
+    username="$2"
+    echo "$username" > "$USERNAME_FILE"
+    echo "Username set to: $username"
+    exit 0
+fi
+
+# If the username file exists, read the username from it
+if [ -f "$USERNAME_FILE" ]; then
+    username=$(cat "$USERNAME_FILE")
+    echo "Username: $username"
+else
+    echo "Username not set."
+fi
+
+# Rest of the script
+
+
+# myscript.ps1
+
+# Path to the file storing the username
+$usernameFile = "C:\path\to\username.txt"
+
+if ($args[0] -eq "--set-username") {
+    # Set the username from the command line argument
+    $username = $args[1]
+    $username | Out-File -FilePath $usernameFile
+    Write-Output "Username set to: $username"
+    exit
+}
+
+# If the username file exists, read the username from it
+if (Test-Path $usernameFile) {
+    $username = Get-Content -Path $usernameFile
+    Write-Output "Username: $username"
+}
+else {
+    Write-Output "Username not set."
+}
+
+# Rest of the script
+
+'''
+
+# MAYBE CREATE A GUI VERSION LATER WITH ZENITY: https://help.gnome.org/users/zenity/stable/
