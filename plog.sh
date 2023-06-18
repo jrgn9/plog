@@ -48,7 +48,8 @@ then
 	IN TERMINAL: 'plog --help' FOR HELP MENU
 	OR SEE README FOR DOCUMENTATION
 	****************************************
-	\n
+
+	---START OF LOG---
 	EOF
 	)
 	
@@ -62,7 +63,7 @@ fi
 logfile=$(find . -name "*.log" -not -name "backup.log")
 
 : '
-Might delete title. Not sure yet
+Might delete title. Not sure yet. Might also add author
 
 echo "Enter entry title (not mandatory. Default: None) - Ctrl+D to finish"
 read -r input_title
@@ -80,7 +81,14 @@ then
 	# Creates a backup before removing last entry
 	cp "$logfile" backup.log
 
-	# Removes entry from last up until end of previous entry by using a loop
+	# Removes entry from last up until end of previous entry
+	
+	tac "$logfile" | awk -v RS='~~~~~~' 'NR > 1 { print }' | tac > tmpfile && mv tmpfile "$logfile"
+
+	#awk 'BEGIN { RS = "***\n"; ORS = "***\n" } NR > 1 { print prev } { prev = $0 } END { printf "%s", prev }' "$logfile" > tmpfile && mv tmpfile "$logfile"
+
+	### Resulted in only ****************************
+	#awk -v RS="***" 'NR > 1 {printf "%s***", prev} {prev=$0} END {printf "%s", prev}' "$logfile" > tmpfile && mv tmpfile "$logfile"
 	
 	### Deletes every entry
 	#sed -i -e :a -e '$!N; $!ba' -e '/^\*\*\*/,$d' "$logfile"
@@ -137,4 +145,5 @@ timestamp=$(date +"%d.%m.%Y %H:%M:%S")
 
 # Redirects the log entry to the log file
 # Might add title, not sure
-echo -e "\n$timestamp\n$entry\n\n***" >> "$logfile"
+# Might change the delimiter
+echo -e "\n$timestamp\n$entry\n\n~~~~~~" >> "$logfile"
