@@ -11,6 +11,4 @@ Options:
 -m	--msg		Write short message without entering nano. Must be in "quotes"
 -dl	--dlast		Delete last entry. Creates backup which will be deleted at next entry
 -r	--revert	Revert log file to the backup
-
-Might add:
 -a	--author	Sets author in settings to not be prompted each time.
