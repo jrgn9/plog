@@ -73,6 +73,31 @@ then
 fi
 '
 
+## Author
+# THIS NEEDS TO BE FIXED BECAUSE NOW IT WILL PROMPT AUTHOR WHEN OTHER FLAGS ARE INVOKED
+
+# Source the .config file
+source .config
+
+if [ "$1" = "--author" -o "$1" = "-a" ]
+then
+	# Prompt user for name
+	read -p "Enter author name: " author
+
+	# Update author in the .config file
+	sed -i "s/author=.*/author=\"$author\"/" .config
+
+	# Source the updated .config file
+	source .config
+
+	echo "Author: $author saved in config"
+	echo "To edit author use plog --author or edit the .config file"
+
+elif [ ! -f ".config" -o "$author" = "name here"]
+then
+	read -p "Enter author name (use plog --author to set new default name) " author
+fi
+
 ## Flag checks
 # Delete last entry flag
 if [ "$1" = "--dlast" -o "$1" = "-dl" ]
