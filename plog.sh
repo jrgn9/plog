@@ -42,6 +42,8 @@ then
 	touch "$filename.log"
 
 	# Adding start of the document by using Here Document for multi-line
+	# Maybe add this as an seperate document in the install version to be able to edit
+	# the init message?
 	init=$(cat <<-EOF
 	****************************************
 	THIS IS A LOG FILE CREATED BY PLOG
