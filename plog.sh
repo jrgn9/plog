@@ -159,10 +159,12 @@ then
 
 	if [ -n "$entry" ]
 	then
-		echo "Entry added to $logfile"
+		# Might need to fix this in the binary file later
+		echo "Entry added to ${logfile:2}"
 	else
 		echo "Something went wrong, please try again"
 		exit 1
+	fi
 else
 	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
