@@ -1,5 +1,8 @@
 #! /bin/bash
 
+# Fetches settings from .config
+source .config
+
 ## Checks if help flag is present
 if [ "$1" = "--help" -o "$1" = "-h" ]
 then
@@ -65,7 +68,7 @@ fi
 logfile=$(find . -name "*.log" -not -name "backup.log")
 
 : '
-Might delete title. Not sure yet. Might also add author
+Might delete title. Not sure yet.
 
 echo "Enter entry title (not mandatory. Default: None) - Ctrl+D to finish"
 read -r input_title
@@ -75,30 +78,16 @@ then
 fi
 '
 
-## Author
-# THIS NEEDS TO BE FIXED BECAUSE NOW IT WILL PROMPT AUTHOR WHEN OTHER FLAGS ARE INVOKED
 
-# Source the .config file
-source .config
-
-if [ "$1" = "--author" -o "$1" = "-a" ]
-then
-	# Prompt user for name
-	read -p "Enter author name: " author
-
-	# Update author in the .config file
-	sed -i "s/author=.*/author=\"$author\"/" .config
-
-	# Source the updated .config file
-	source .config
-
-	echo "Author: $author saved in config"
-	echo "To edit author use plog --author or edit the .config file"
-
-elif [ ! -f ".config" -o "$author" = "name here"]
+# If I want to prompt user for author every time
+# Needs to be added in msg and else if I want to use it
+: '
+elif [ ! -f ".config" -o "$author" = "$(whoami)"]
 then
 	read -p "Enter author name (use plog --author to set new default name) " author
 fi
+
+'
 
 ## Flag checks
 # Delete last entry flag
@@ -141,6 +130,21 @@ then
 	echo "Backup is restored to $logfile"
 	exit 0
 
+# Change author flag
+elif [ "$1" = "--author" -o "$1" = "-a" ]
+then
+	# Prompt user for name
+	read -p "Enter author name: " author
+
+	# Update author in the .config file
+	sed -i "s/author=.*/author=\"$author\"/" .config
+
+	# Source the updated .config file
+	source .config
+
+	echo "Author: $author saved in config"
+	echo "To edit author use plog --author or edit the .config file manually"
+
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then
@@ -173,4 +177,4 @@ timestamp=$(date +"%d.%m.%Y %H:%M:%S")
 # Redirects the log entry to the log file
 # Might add title, not sure
 # Might change the delimiter
-echo -e "\n$timestamp\n$entry\n\n~~~~~~" >> "$logfile"
+echo -e "\n$timestamp\nAuthor: $author\n$entry\n\n~~~~~~" >> "$logfile"
