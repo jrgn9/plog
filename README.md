@@ -21,7 +21,7 @@ plog will create a log file in the current directory. For help menu run
 ./plog.sh --help
 ```
 
-Since I haven't created an install yet, make sure to move help.txt to the folder you are running plog.sh from if you want to be able to print the help screen. However, the script works just fine without it, so you can move it to whichever folder you want to create a .log file in.
+Since I haven't created an install yet, make sure to move help.txt to the folder you are running plog.sh from if you want to be able to print the help screen. However, the script works just fine without help.txt, so you can move it to whichever folder you want to create a .log file in.
 
 ## License and attributions
 This project is licensed with GNU GENERAL PUBLIC LICENSE V3
@@ -46,4 +46,6 @@ plog is made by jrgn
 
 ❌ MacOS compatible version
 
-❌ Powershell script version for Windows
+❌ WSL compatible version
+
+❌ Powershell script version for Windows (if I bother...)
