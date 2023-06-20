@@ -3,6 +3,8 @@
 # Fetches settings from .config
 source .config
 
+# In the bin file I need to use pwd to find current directory for it to be right
+
 ## Checks if help flag is present
 if [ "$1" = "--help" -o "$1" = "-h" ]
 then
@@ -95,37 +97,28 @@ if [ "$1" = "--dlast" -o "$1" = "-dl" ]
 then
 
 	# Creates a backup before removing last entry
+	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" backup.log
 
 	# Removes entry from last up until end of previous entry
 	
-	tac "$logfile" | awk -v RS='~~~~~~' 'NR > 1 { print }' | tac > tmpfile && mv tmpfile "$logfile"
+	awk -v RS="\n\n~~~~~~\n" 'BEGIN{ORS=RS} NR>1 {print prev} {prev=$0} END{}' "$logfile" > temp && mv temp "$logfile"
 
-	#awk 'BEGIN { RS = "***\n"; ORS = "***\n" } NR > 1 { print prev } { prev = $0 } END { printf "%s", prev }' "$logfile" > tmpfile && mv tmpfile "$logfile"
+	# Check if the file was modified and prints message
+	if [[ $? -eq 0 ]]
+	then
+		echo "Last entry deleted"
+	else
+		echo "There are no entries to delete"
+	fi
 
-	### Resulted in only ****************************
-	#awk -v RS="***" 'NR > 1 {printf "%s***", prev} {prev=$0} END {printf "%s", prev}' "$logfile" > tmpfile && mv tmpfile "$logfile"
-	
-	### Deletes every entry
-	#sed -i -e :a -e '$!N; $!ba' -e '/^\*\*\*/,$d' "$logfile"
-	
-	### Deletes every *** and the entries in the middle
-	#sed -i '/^\*\*\*$/,/^\*\*\*$/d' "$logfile"
-	
-	### Deletes every *** except the last
-	#sed -i '$!N; /^\*\*\*\n$/!P; D' "$logfile"
-	
-	### Deletes every *** in the document
-	#sed -i '/^\*\*\*$/,/^.*$/d' "$logfile"
-	
-	### Deletes the last entry and every *** as well as some entries in between
-	#tac "$logfile" | sed '/^\*\*\*$/,/^.*\*\*\*$/d' | tac > tmpfile && mv tmpfile "$logfile"
 	exit 0
 
 # Revert to backup flag
 elif [ "$1" = "--revert" -o "$1" = "-r" ]
 then
 	# Overwrite the other file with the backup file
+	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	mv backup.log "$logfile"
 	echo "Backup is restored to $logfile"
 	exit 0
