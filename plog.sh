@@ -135,7 +135,8 @@ elif [ "$1" = "--author" -o "$1" = "-a" ]
 then
 	# Prompt user for name
 	read -p "Enter author name: " author
-
+	
+	# THIS MIGHT BE FUCKED BECAUSE OF $(whoami) - FOLLOW UP!!!!
 	# Update author in the .config file
 	sed -i "s/author=.*/author=\"$author\"/" .config
 
@@ -148,21 +149,36 @@ then
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then
-	# Coming soon
+	
 	# Removes backup if there is one from previously deleting last entry
+	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f backup.log
+	
+	# This might be rewritten using 'getopts', but I think this way is sufficent
+	entry="$2"
+
+	if [ -n "$entry" ]
+	then
+		echo "Entry added to $logfile"
+	else
+		echo "Something went wrong, please try again"
+		exit 1
 else
 	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
+	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f backup.log
+
 	echo -e "Enter log entry. A Nano text editor will open shortly \nCtrl+S to save, Ctrl+X to quit"
-	sleep 1.5
+
+	# Sleep so the user have time to read text. Time set in .config (default: 1.5s)
+	sleep $editor_delay
 
 	# Creates a temporary file for log entry
 	tmpfile=$(mktemp)
 
-	# Opens nano text editor
-	"${EDITOR:-nano}" "$tmpfile"
+	# Opens default text editor set in .config (default: nano)
+	"$text_editor" "$tmpfile"
 
 	# Reads content of temporary file to variable
 	entry=$(cat "$tmpfile")
@@ -171,10 +187,11 @@ else
 	rm "$tmpfile"
 fi
 
+# ADDED THIS TO .config
 # Creates timestamp in the format dd.mm.yyyy hh:mm:ss
-timestamp=$(date +"%d.%m.%Y %H:%M:%S")
+#timestamp=$(date +"%d.%m.%Y %H:%M:%S")
 
 # Redirects the log entry to the log file
 # Might add title, not sure
 # Might change the delimiter
-echo -e "\n$timestamp\nAuthor: $author\n$entry\n\n~~~~~~" >> "$logfile"
+echo -e "\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
