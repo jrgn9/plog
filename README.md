@@ -8,7 +8,7 @@ plog is a command line tool for creating project logs and entries from CLI. Keep
 ## Install
 I am going to create an install script and have the main script as a binary file that gets copied into /bin and maybe a .folder for settings/configs and stuff. The goal is to be able to just write "plog" in terminal. I will get to this at a later date.
 
-For now, just run plog.sh in terminal
+**For now, just run plog.sh in terminal**
 
 ## How to use
 Make sure the script have execution rights by running
@@ -29,3 +29,21 @@ This project is licensed with GNU GENERAL PUBLIC LICENSE V3
 [Tractor icons created by Futuer - Flaticon](https://www.flaticon.com/free-icons/tractor)
 
 plog is made by jrgn
+
+## Roadmap and to-do
+
+✅ Create a basic working prototype
+
+❌ Pre-alpha test prototype with all functionality
+
+❌ Create an install script and binary file
+
+❌ Alpha test with program installer
+
+❌ Open beta test
+
+❌ Release for Linux
+
+❌ MacOS compatible version
+
+❌ Powershell script version for Windows
