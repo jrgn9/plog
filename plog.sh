@@ -159,8 +159,9 @@ then
 	entry="$2"
 	
 	# Checking if the message is in double quotes and not empty
-	if [[ $2 == \"*\" && $2 == *\" ]]
+	#if [[ $2 == \"*\" && $2 == *\" ]]
 	#if [ "$(echo "$2" | grep -q "^\".*\"$")" ]
+	if [[ $2 =~ ^\".*\"$ ]]
 	then
 		echo "Entry added to ${logfile:2}"
 	else
