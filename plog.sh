@@ -3,7 +3,7 @@
 # Fetches settings from .config
 source .config
 
-# In the bin file I need to use pwd to find current directory for it to be right
+
 
 ## Checks if help flag is present
 if [ "$1" = "--help" -o "$1" = "-h" ]
@@ -15,6 +15,7 @@ fi
 
 ## Error handling for logs
 # Finds all .log files except backup.log
+### In the bin file I need to use pwd to find current directory for it to be right
 logs=$(find . -name "*.log" -not -name "backup.log")
 
 # Counts the number of files found
@@ -67,6 +68,7 @@ then
 fi
 
 ## Set logfile to be the file found in current directory
+### In the bin file I need to use pwd to find current directory for it to be right
 logfile=$(find . -name "*.log" -not -name "backup.log")
 
 : '
@@ -100,18 +102,25 @@ then
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" backup.log
 
-	# Removes entry from last up until end of previous entry
-	
-	awk -v RS="\n\n~~~~~~\n" 'BEGIN{ORS=RS} NR>1 {print prev} {prev=$0} END{}' "$logfile" > temp && mv temp "$logfile"
-
-	# Check if the file was modified and prints message
-	if [[ $? -eq 0 ]]
+	# Checks if there are any entries (skipping the init message)
+	# REMEMBER: UPDATE NR IF I CHANGE INIT MESSAGE!!!!
+	if [[ $(awk 'NR>8' "$logfile") == "" ]]
 	then
-		echo "Last entry deleted"
+		echo "There are No entries to delete"
+		exit 1
 	else
-		echo "There are no entries to delete"
-	fi
+		# Uses awk and delimiter to seperate entries, and copies everything
+		# except the last one to a temporary file, then overwrites the log with it
+		awk -v RS="\n\n~~~~~~\n" 'BEGIN{ORS=RS} NR>1 {print prev} {prev=$0} END{}' "$logfile" > tmpfile && mv tmpfile "$logfile"
 
+		# Check if the file was modified and prints message accordingly
+		if [[ $? -eq 0 ]]
+		then
+			echo "Last entry deleted"
+		else
+			echo "Could not delete last entry"
+		fi
+	fi
 	exit 0
 
 # Revert to backup flag
@@ -150,8 +159,21 @@ then
 	entry="$2"
 	
 	# Checking if the message is in double quotes and not empty
-	if [[ $2 != \"*\" || $2 != *\" ]]
+	if [[ $2 == \"*\" && $2 == *\" ]]
+	#if [ "$(echo "$2" | grep -q "^\".*\"$")" ]
 	then
+		echo "Entry added to ${logfile:2}"
+	else
+		if [ -z "$2" ]
+		then
+			echo "Error: Message cannot be empty"
+		else
+			echo "Error: Message should be enclosed in double quotes"
+		fi
+
+		exit 1
+	fi
+		: '
 		if [[ $2 != "\"\"" ]]
 		then
 			echo "Error: Message should be enclosed in double quotes"
@@ -165,6 +187,7 @@ then
 		#### Might need to fix this in the binary file later
 		echo "Entry added to ${logfile:2}"
 	fi
+	'
 else
 	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
