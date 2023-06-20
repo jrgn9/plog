@@ -148,22 +148,29 @@ then
 
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
-then
-	
+then	
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f backup.log
 	
 	# This might be rewritten using 'getopts', but I think this way is sufficent
 	entry="$2"
-
-	if [ -n "$entry" ]
+	
+	# Checking if the message is in double quotes and not empty
+	if [[ $2 != \"*\" || $2 != *\" ]]
 	then
-		# Might need to fix this in the binary file later
-		echo "Entry added to ${logfile:2}"
+		if [[ $2 != "\"\"" ]]
+		then
+			echo "Error: Message should be enclosed in double quotes"
+			exit 1
+		else
+			echo "Error: Message cannot be empty"
+			exit 1
+		fi
 	else
-		echo "Something went wrong, please try again"
-		exit 1
+		# The input is valid and added to the logfile. Success message to user.
+		#### Might need to fix this in the binary file later
+		echo "Entry added to ${logfile:2}"
 	fi
 else
 	# No flags detected
