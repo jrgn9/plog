@@ -138,6 +138,13 @@ then
 	# Prompt user for name
 	read -p "Enter author name: " author
 	
+	# Checks if user provided author name
+	if [ -z "$author"]
+	then
+		echo "Error: No author name provided. Author not changed"
+		exit 1
+	fi
+	
 	# THIS MIGHT BE FUCKED BECAUSE OF $(whoami) - FOLLOW UP!!!!
 	# Update author in the .config file
 	sed -i "s/author=.*/author=\"$author\"/" .config
@@ -173,6 +180,7 @@ then
 	# This might be rewritten using 'getopts', but I think this way is sufficent
 	entry="$2"	
 else
+	# Checks if there are no flags provided to ensure positional arguments
 	if [ ! -z "$2" ]
 	then
 		echo "Error: Flag arguments are positional and must be the first argument"
@@ -218,4 +226,4 @@ fi
 # Might add title, not sure
 # Might change the delimiter
 echo -e "\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
-echo "Entry added to ${logfile:2}"
+echo -e "\nEntry added to ${logfile:2}"
