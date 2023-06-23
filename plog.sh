@@ -155,40 +155,22 @@ then
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f backup.log
 	
-	# This might be rewritten using 'getopts', but I think this way is sufficent
-	entry="$2"
-	
-	# Checking if the message is in double quotes and not empty
-	#if [[ $2 == \"*\" && $2 == *\" ]]
-	#if [ "$(echo "$2" | grep -q "^\".*\"$")" ]
-	if [[ $2 =~ ^\".*\"$ ]]
+	if [ -z "$2" ] || [ "$2" = "" ]
 	then
-		echo "Entry added to ${logfile:2}"
-	else
-		if [ -z "$2" ]
-		then
-			echo "Error: Message cannot be empty"
-		else
-			echo "Error: Message should be enclosed in double quotes"
-		fi
+		echo "Error: Message cannot be empty"
+		exit 1 
 
+	elif [ -n "$3" ]
+	then
+		#NOTE: Double quotes or escaped quotes within the message may cause problems
+		echo "Error: Message should be enclosed in single or double quotes"
 		exit 1
 	fi
-		: '
-		if [[ $2 != "\"\"" ]]
-		then
-			echo "Error: Message should be enclosed in double quotes"
-			exit 1
-		else
-			echo "Error: Message cannot be empty"
-			exit 1
-		fi
-	else
-		# The input is valid and added to the logfile. Success message to user.
-		#### Might need to fix this in the binary file later
-		echo "Entry added to ${logfile:2}"
-	fi
-	'
+
+	# This might be rewritten using 'getopts', but I think this way is sufficent
+	entry="$2"
+	echo "Entry added to ${logfile:2}"
+
 else
 	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
@@ -216,7 +198,6 @@ fi
 # ADDED THIS TO .config
 # Creates timestamp in the format dd.mm.yyyy hh:mm:ss
 #timestamp=$(date +"%d.%m.%Y %H:%M:%S")
-
 # Redirects the log entry to the log file
 # Might add title, not sure
 # Might change the delimiter
