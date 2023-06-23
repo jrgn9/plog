@@ -144,9 +144,11 @@ then
 
 	# Source the updated .config file
 	source .config
-
+	
+	# Author successfully added
 	echo "Author: $author saved in config"
 	echo "To edit author use plog --author or edit the .config file manually"
+	exit 0
 
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
@@ -155,12 +157,13 @@ then
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f backup.log
 	
+	# Checks if the message is empty or not present
 	if [ -z "$2" ] || [ "$2" = "" ]
 	then
 		echo "Error: Message cannot be empty"
-		exit 1 
-
+		exit 1 	
 	elif [ -n "$3" ]
+	# Checks if there are a third argument, suggesting that the message is not in quotes
 	then
 		#NOTE: Double quotes or escaped quotes within the message may cause problems
 		echo "Error: Message should be enclosed in single or double quotes"
@@ -168,10 +171,14 @@ then
 	fi
 
 	# This might be rewritten using 'getopts', but I think this way is sufficent
-	entry="$2"
-	echo "Entry added to ${logfile:2}"
-
+	entry="$2"	
 else
+	if [ ! -z "$2" ]
+	then
+		echo "Error: Flag arguments are positional and must be the first argument"
+		exit 1
+	fi
+
 	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
@@ -187,9 +194,17 @@ else
 
 	# Opens default text editor set in .config (default: nano)
 	"$text_editor" "$tmpfile"
-
-	# Reads content of temporary file to variable
-	entry=$(cat "$tmpfile")
+	
+	# Checks if the file size is greater than zero
+	if [ -s "$tmpfile" ]
+	then
+		# Reads content of temporary file to variable
+		entry=$(cat "$tmpfile")
+	else
+		# Error when file is less than zero
+		echo -e "\nError: Message is empty. No entry added"
+		exit 1
+	fi
 
 	# Removes the temporary file
 	rm "$tmpfile"
@@ -198,7 +213,9 @@ fi
 # ADDED THIS TO .config
 # Creates timestamp in the format dd.mm.yyyy hh:mm:ss
 #timestamp=$(date +"%d.%m.%Y %H:%M:%S")
+
 # Redirects the log entry to the log file
 # Might add title, not sure
 # Might change the delimiter
 echo -e "\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
+echo "Entry added to ${logfile:2}"
