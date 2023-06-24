@@ -60,7 +60,7 @@ ___
 ___
 ### Settings
 
-You can change some settings in the .config file.
+You can change some settings in the .config file:
 
 **Author:** Can be changed by invoking plog.sh -a or by manually entering it in the .config file. The author name will be displayed in each log entry. The default is whoami.
 
