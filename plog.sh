@@ -1,7 +1,7 @@
 #! /bin/bash
 
 # Fetches settings from .config
-source .config
+source config
 
 
 
