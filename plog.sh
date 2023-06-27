@@ -192,10 +192,11 @@ else
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f backup.log
 
-	echo -e "Enter log entry. A Nano text editor will open shortly \nCtrl+S to save, Ctrl+X to quit"
-
+	## REMOVE SLEEP AND MESSAGE
+	#echo -e "Enter log entry. A Nano text editor will open shortly \nCtrl+S to save, Ctrl+X to quit"
+	
 	# Sleep so the user have time to read text. Time set in .config (default: 1.5s)
-	sleep $editor_delay
+	#sleep $editor_delay
 
 	# Creates a temporary file for log entry
 	tmpfile=$(mktemp)
