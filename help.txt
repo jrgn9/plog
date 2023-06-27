@@ -18,8 +18,8 @@ Options:
 *-te	--txteditor	Change default text editor (can also be done manually in config)
 *-p	--print		Prints log entries based on date provided
 
-*	--uninstall	Uninstall plog by running uninstall script (log files not affected)
 *	--settings	Opens the config file to change settings
-
+*	--about		About this program
+*	--uninstall	Uninstall plog by running uninstall script (log files not affected)
 
 *not yet implemented
