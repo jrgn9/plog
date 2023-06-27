@@ -10,5 +10,16 @@ Options:
 -h	--help		Display this help message
 -m	--msg		Write short message without entering nano. Must be in "quotes"
 -dl	--dlast		Delete last entry. Creates backup which will be deleted at next entry
--r	--revert	Revert log file to the backup
+-r	--revert	Revert log file to backup to revert accidental changes
 -a	--author	Sets author in settings to not be prompted each time.
+*-i	--import	Imports the content of a file and adds it as a log entry
+*-e	--edit		Edit last log entry (or by number?)
+*-el	--editlog	Edit the log file
+*-te	--txteditor	Change default text editor (can also be done manually in config)
+*-p	--print		Prints log entries based on date provided
+
+*	--uninstall	Uninstall plog by running uninstall script (log files not affected)
+*	--settings	Opens the config file to change settings
+
+
+*not yet implemented
