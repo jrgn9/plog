@@ -139,7 +139,7 @@ then
 	read -p "Enter author name: " author
 	
 	# Checks if user provided author name
-	if [ -z "$author"]
+	if [ -z "$author" ]
 	then
 		echo "Error: No author name provided. Author not changed"
 		exit 1
