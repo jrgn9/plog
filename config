@@ -26,10 +26,12 @@ text_editor="${EDITOR:-nano}"
 #text_editor="${EDITOR:-joe}"
 
 
+####CHANGED TIMESTAMP TO ALWAYS SHOW ISO 8601 FORMAT
+
 ## Change default time format
 ## Default: dd:mm:yyyy hh:mm:ss
 
-timestamp=$(date +"%d.%m.%Y %H:%M:%S")
+#timestamp=$(date +"%d.%m.%Y %H:%M:%S")
 #timestamp=$(date +"%H:%M:%S" %d.%m.%Y)
 #timestamp=$(date +"%m.%d.%Y %H:%M:%S")
 #timestamp=$(date +"%d.%m.%Y %H:%M:%S")

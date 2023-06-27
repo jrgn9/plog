@@ -218,9 +218,8 @@ else
 	rm "$tmpfile"
 fi
 
-# ADDED THIS TO .config
-# Creates timestamp in the format dd.mm.yyyy hh:mm:ss
-#timestamp=$(date +"%d.%m.%Y %H:%M:%S")
+# Creates timestamp in the ISO 8601 format: 'YYYY-MM-DDTHH:MM:SSZ'
+timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Redirects the log entry to the log file
 # Might add title, not sure
