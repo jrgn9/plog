@@ -147,10 +147,10 @@ then
 	
 	# THIS MIGHT BE FUCKED BECAUSE OF $(whoami) - FOLLOW UP!!!!
 	# Update author in the .config file
-	sed -i "s/author=.*/author=\"$author\"/" .config
+	sed -i "s/author=.*/author=\"$author\"/" config
 
 	# Source the updated .config file
-	source .config
+	source config
 	
 	# Author successfully added
 	echo "Author: $author saved in config"
