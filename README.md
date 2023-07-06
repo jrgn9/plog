@@ -27,7 +27,7 @@ Since I haven't created an install yet, make sure to move help.txt and .config t
 ## How to use
 Invoke plog with ./plog.sh. *Usage:* ./plog.sh [option]. 
 
-By invoking without any options, a nano text editor will open for longer log entries.
+By invoking without any options, the default text editor will open for longer log entries.
 
 The first time you run the program it will check if there is a log file present in the current directory. If not, you are prompted for a file name which creates the file. 
 
@@ -50,7 +50,7 @@ ___
 **Options:**
 | Short option | Long option | Description                                                                                                                                                                   |
 | ------------ | --------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-|              |             | No options opens a nano text editor for longer text entries. Ctrl+S Ctrl+X to save and quit after writing an entry. Default text editor can be changed in the .config file.   |
+|              |             | No options opens the default text editor for longer text entries. |
 | \-h          | \--help     |  Display help message (help.txt must be in the same directory as plog.sh)                                                                                                     |
 | \-m          | \--msg      | Write a short message without entering nano. The text must be in single or double quotes.                                                                                     |
 | \-dl         | \--dlast    | Delete last entry. Creates a backup file which will be deleted at next entry (the deletion is a temporary solution and won't be that way when the install script is in place) |

@@ -10,8 +10,8 @@ author=$(whoami)
 
 #editor_delay=1.5
 
-
+###REMOVE THIS SINCE $EDITOR TAKES PRECEDENCE
 ## Change default text editor for entries
 ## Default: Nano (if you haven't set your own default editor in bashrc, etc)
 
-text_editor="${EDITOR:-nano}"
+#text_editor="${EDITOR:-nano}"
