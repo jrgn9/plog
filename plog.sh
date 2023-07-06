@@ -157,6 +157,64 @@ then
 	echo "To edit author use plog --author or edit the .config file manually"
 	exit 0
 
+# Change default text editor flag
+elif [ "$1" = "-te" -o "$1" = "--txteditor" ]
+then
+	echo "Set your default editor. Note: If you have set a system default it will take precedence"
+	
+	# Checks what editor the user currently have
+	echo "editor before source: $text_editor"
+	source config
+	echo "editor after source: $text_editor"
+	if [ -n "$EDITOR" ]
+	then
+		echo "Current default editor is poop: $EDITOR"
+	else
+		echo "Current default editor is: $text_editor"
+	fi
+
+	known_editors=("nano" "vim" "emacs" "pico" "jed" "ed" "mcedit" "joe" "ne" "ex" "sublime" "edlin" "vi" "notepad" "code" "gedit" "kate" "jedit" "gvim" "xemacs" "geany" "textmate" "nvim")
+
+	echo -e "\nSome common editors: nano, vim, vi, emacs, pico, jed, ed, joe"
+
+	read -p "Enter your preferred editor in lower case: " new_editor
+
+	if [[ " ${known_editors[*]} " =~ " $new_editor " ]]
+	then
+		sed -i 's/text_editor=.*/text_editor="${EDITOR:-'"$new_editor"'}"/' config
+		
+		if grep -q "^text_editor=\"\${EDITOR:-$new_editor}\"" config
+		then
+
+			echo -e "\nCurrent default editor was successfully changed. New default: $new_editor"
+			exit 1
+		else
+			echo -e "\nSomething went wrong. Default editor was not changed"
+			exit 0
+		fi
+	else
+		echo -e "\nError: $new_editor is not in the list of known editors."
+		echo -e "This could be because of a typo or that it simply is not in our list\n"
+		read -p "Are you sure $new_editor is a valid editor? y/n: " choice
+		
+		if [ "$choice" = "y" -o "$choice" = "Y" ]
+		then
+			sed -i 's/text_editor=.*/text_editor="${EDITOR:-'"$new_editor"'}"/' config
+
+			if grep -q "^text_editor=\"\${EDITOR:-$new_editor}\"" config
+			then
+				echo -e "\nCurrent default editor was successfully changed. New default: $new_editor"
+				exit 1
+			else
+				echo -e "\nSomething went wrong. Default editor was not changed"
+				exit 0
+			fi
+		else
+			echo -e "\nEditor is not changed. Current default editor is $text_editor"
+			exit 0
+		fi
+	fi
+	
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then	
