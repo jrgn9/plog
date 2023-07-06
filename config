@@ -14,4 +14,4 @@ author=$(whoami)
 ## Change default text editor for entries
 ## Default: Nano (if you haven't set your own default editor in bashrc, etc)
 
-text_editor="nano"
+text_editor="${EDITOR:-nano}"
