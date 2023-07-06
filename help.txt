@@ -15,7 +15,7 @@ Options:
 *-i	--import	Imports the content of a file and adds it as a log entry
 *-e	--edit		Edit last log entry (or by number?)
 *-el	--editlog	Edit the log file
-*-te	--txteditor	Change default text editor (can also be done manually in config)
+*-te	--txteditor	Change default text editor if you don't have a system default (can also be done manually in config)
 *-p	--print		Prints log entries based on date provided
 
 *	--settings	Opens the config file to change settings
