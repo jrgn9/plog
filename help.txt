@@ -13,10 +13,9 @@ Options:
 -r	--revert	Revert log file to backup to revert accidental changes
 -a	--author	Sets author in settings to not be prompted each time.
 *-i	--import	Imports the content of a file and adds it as a log entry
-*-e	--edit		Edit last log entry (or by number?)
-*-el	--editlog	Edit the log file
-*-p	--print		Prints log entries based on date provided
-
+-e	--edit		Edit the log file 	
+*-e#/-el	--editnum/editlast	Edit last log entry (or by number?)
+*-p	--print		Prints log entries based on date provided (no date for the whole document)
 *	--settings	Opens the config file to change settings
 *	--about		About this program
 *	--uninstall	Uninstall plog by running uninstall script (log files not affected)
