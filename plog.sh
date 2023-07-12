@@ -173,8 +173,8 @@ then
 		read -p "Enter date in format YYYY-MM-DD: " printdate
 		
 		# Awk sentence that redirects all matching dates to a tempfile
+		# For some reason it considers the init text to be a part of the first entry
 		awk -v RS="\n\n~~~~~~\n" -v date="$printdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
-		
 
 		# If there is content in the tempfile, print and remove file
 		if [ -s "tmpfile" ]
