@@ -15,7 +15,8 @@ Options:
 *-i	--import	Imports the content of a file and adds it as a log entry
 -e	--edit		Edit the log file 	
 *-e#/-el	--editnum/editlast	Edit last log entry (or by number?)
-*-p	--print		Prints log entries based on date provided (no date for the whole document)
+-p	--print		Prints all log entries. Add the flag 'date' to print by date
+
 *	--settings	Opens the config file to change settings
 *	--about		About this program
 *	--uninstall	Uninstall plog by running uninstall script (log files not affected)
