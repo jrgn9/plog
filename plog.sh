@@ -56,11 +56,14 @@ then
 		# Maybe add this as an seperate document in the install version to be able to edit
 		# the init message?
 		init=$(cat <<-EOF
-		****************************************
+		*************************************************
 		THIS IS A LOG FILE CREATED BY PLOG
 		IN TERMINAL: 'plog --help' FOR HELP MENU
 		OR SEE README FOR DOCUMENTATION
-		****************************************
+		
+		WARNING: 
+		DO NOT EDIT THE FORMAT OF THIS FILE, ONLY CONTENT
+		*************************************************
 
 		---START OF LOG---
 		EOF
@@ -163,10 +166,33 @@ then
 # Print flag
 elif [ "$1" = "--print" -o "$1" = "-p" ]
 then
+	# Checks if there is a date flag for printing by date
+	if [ "$2" = "date" ]
+	then
+		# Prompts user for date
+		read -p "Enter date in format YYYY-MM-DD: " printdate
+		
+		# Awk sentence that redirects all matching dates to a tempfile
+		awk -v RS="\n\n~~~~~~\n" -v date="$printdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+		
 
-	# Prints out the content of the logfile in the terminal
-	cat "$logfile"
-	exit 0
+		# If there is content in the tempfile, print and remove file
+		if [ -s "tmpfile" ]
+		then
+			cat tmpfile
+			rm tmpfile
+			exit 0
+		else
+			# If there are no content in the tempfile exit
+			echo "No entries found for the provided date. Check if you have used the correct date format"
+			exit 1
+		fi
+	else
+		# If there are no date flag
+		# Prints out the content of the entire logfile in the terminal
+		cat "$logfile"
+		exit 0
+	fi
 
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
