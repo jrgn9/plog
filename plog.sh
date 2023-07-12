@@ -34,37 +34,46 @@ elif [ -z "$logs" ]
 # Error handling If there are no log files
 then
 	# Prompts user for file name
-	echo -e "No log file detected \nEnter name for new log file (default: p.log)"
-	read filename
-	
-	# If no name is entered, default is p
-	if [ -z "$filename" ]
+	echo -e "No log file detected \nDo you want to add a new log file? y/n"
+	read answer
+
+	if [ "$answer" = "y" -o "$answer" = "Y" -o "$answer" = "yes" ]
 	then
-		filename=p
+		echo "Enter name for new log file (default: p.log)"
+		read filename
+	
+		# If no name is entered, default is p
+		if [ -z "$filename" ]
+		then
+			filename=p
+		fi
+	
+		# Prints filename and creates file
+		echo "Creating file $filename.log in current directory"
+		touch "$filename.log"
+
+		# Adding start of the document by using Here Document for multi-line
+		# Maybe add this as an seperate document in the install version to be able to edit
+		# the init message?
+		init=$(cat <<-EOF
+		****************************************
+		THIS IS A LOG FILE CREATED BY PLOG
+		IN TERMINAL: 'plog --help' FOR HELP MENU
+		OR SEE README FOR DOCUMENTATION
+		****************************************
+
+		---START OF LOG---
+		EOF
+		)
+	
+		# Adds the init message to the log file
+		echo -e "$init" > $filename.log
+
+		#### Might add prompt for title and description for start of the log
+	else
+		echo "No log file created"
+		exit 1
 	fi
-	
-	# Prints filename and creates file
-	echo "Creating file $filename.log in current directory"
-	touch "$filename.log"
-
-	# Adding start of the document by using Here Document for multi-line
-	# Maybe add this as an seperate document in the install version to be able to edit
-	# the init message?
-	init=$(cat <<-EOF
-	****************************************
-	THIS IS A LOG FILE CREATED BY PLOG
-	IN TERMINAL: 'plog --help' FOR HELP MENU
-	OR SEE README FOR DOCUMENTATION
-	****************************************
-
-	---START OF LOG---
-	EOF
-	)
-	
-	# Adds the init message to the log file
-	echo -e "$init" > $filename.log
-
-	#### Might add prompt for title and description for start of the log
 fi
 
 ## Set logfile to be the file found in current directory
