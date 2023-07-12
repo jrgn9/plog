@@ -71,17 +71,6 @@ fi
 ### In the bin file I need to use pwd to find current directory for it to be right
 logfile=$(find . -name "*.log" -not -name "backup.log")
 
-: '
-Might delete title. Not sure yet.
-
-echo "Enter entry title (not mandatory. Default: None) - Ctrl+D to finish"
-read -r input_title
-if [ "$input_title" -ne "" ]
-then
-	title=$input_title
-fi
-'
-
 
 # If I want to prompt user for author every time
 # Needs to be added in msg and else if I want to use it
@@ -90,17 +79,16 @@ elif [ ! -f ".config" -o "$author" = "$(whoami)"]
 then
 	read -p "Enter author name (use plog --author to set new default name) " author
 fi
-
 '
 
-## Flag checks
+## FLAG CHECKS
 # Delete last entry flag
 if [ "$1" = "--dlast" -o "$1" = "-dl" ]
 then
 
 	# Creates a backup before removing last entry
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
-	cp "$logfile" backup.log
+	cp "$logfile" "$logfile".backup.log
 
 	# Checks if there are any entries (skipping the init message)
 	# REMEMBER: UPDATE NR IF I CHANGE INIT MESSAGE!!!!
@@ -128,7 +116,7 @@ elif [ "$1" = "--revert" -o "$1" = "-r" ]
 then
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
-	mv backup.log "$logfile"
+	mv "$logfile".backup.log "$logfile"
 	echo "Backup is restored to $logfile"
 	exit 0
 
@@ -157,12 +145,26 @@ then
 	echo "To edit author use plog --author or edit the .config file manually"
 	exit 0
 
+# Edit flag
+elif [ "$1" = "--edit" -o "$1" = "-e" ]
+then
+	"$EDITOR" "$logfile"
+	exit 0
+
+# Print flag
+elif [ "$1" = "--print" -o "$1" = "-p" ]
+then
+
+	# Prints out the content of the logfile in the terminal
+	cat "$logfile"
+	exit 0
+
 # Short message flag
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then	
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f backup.log
+	rm -f "$logfile".backup.log
 	
 	# Checks if the message is empty or not present
 	if [ -z "$2" ] || [ "$2" = "" ]
@@ -190,13 +192,7 @@ else
 	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f backup.log
-
-	## REMOVE SLEEP AND MESSAGE
-	#echo -e "Enter log entry. A Nano text editor will open shortly \nCtrl+S to save, Ctrl+X to quit"
-	
-	# Sleep so the user have time to read text. Time set in .config (default: 1.5s)
-	#sleep $editor_delay
+	rm -f "$logfile".backup.log
 
 	# Creates a temporary file for log entry
 	tmpfile=$(mktemp)
@@ -223,7 +219,5 @@ fi
 timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
 
 # Redirects the log entry to the log file
-# Might add title, not sure
-# Might change the delimiter
 echo -e "\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
 echo -e "\nEntry added to ${logfile:2}"
