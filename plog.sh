@@ -160,11 +160,20 @@ then
 # Import flag
 elif [ "$1" = "--import" -o "$1" = "-i" ]
 then
-	echo "Enter full path of the file to import:"
-	read filepath
+	# Finds the current directory of the user
+	current_dir=$(pwd)
+
+	echo "Enter the file name or relative path of the file to import (default: $current_dir/):"
+	read filename
 	
-	# Creates a temporary file for log entry
-	#tmpfile=$(mktemp)
+	# If the user didn't provide a filename, use the current directory as the default
+	if [ -z "$filename" ]
+	then
+		filepath="$current_dir/"
+	else
+		# Combine the filename with the current directory to form the relative path
+		filepath="$current_dir/$filename"
+	fi
 
 	# Redirects content of the file to a tempfile
 	cat $filepath > tmpfile
