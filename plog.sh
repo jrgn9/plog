@@ -157,15 +157,45 @@ then
 	echo "To edit author use plog --author or edit the .config file manually"
 	exit 0
 
+# Import flag
+elif [ "$1" = "--import" -o "$1" = "-i" ]
+then
+	echo "Enter full path of the file to import:"
+	read filepath
+	
+	# Creates a temporary file for log entry
+	#tmpfile=$(mktemp)
+
+	# Redirects content of the file to a tempfile
+	cat $filepath > tmpfile
+	
+	# Checks if there are content in the tempfile
+	if [ -s tmpfile ]
+	then
+		# Sets entry to be the content of the file
+		entry=$(cat tmpfile)
+	else
+		# No content in the file/wrong path
+		echo "No file with content found. Did you write the right path? Try again."
+		exit 1
+	fi
+	
+	rm tmpfile
+
 # Edit flag
 elif [ "$1" = "--edit" -o "$1" = "-e" ]
 then
+	# ADD OPTION FOR BY DATE AND BY NUMBER
+	
+	# Opens the log file with the default editor
 	"$EDITOR" "$logfile"
 	exit 0
 
 # Print flag
 elif [ "$1" = "--print" -o "$1" = "-p" ]
 then
+	# ADD PRINT BY NUMBER
+
 	# Checks if there is a date flag for printing by date
 	if [ "$2" = "date" ]
 	then
@@ -185,6 +215,7 @@ then
 		else
 			# If there are no content in the tempfile exit
 			echo "No entries found for the provided date. Check if you have used the correct date format"
+			rm tmpfile
 			exit 1
 		fi
 	else
