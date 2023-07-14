@@ -163,8 +163,15 @@ then
 	# Finds the current directory of the user
 	current_dir=$(pwd)
 
-	echo "Enter the file name or relative path of the file to import (default: $current_dir/):"
-	read filename
+	# Checks if user has provided file as argument to skip being prompted
+	if [ -e "$2" ]
+	then
+		filename="$2"
+	else
+	
+		echo "Enter the file name or relative path of the file to import (default: $current_dir/):"
+		read filename
+	fi
 	
 	# If the user didn't provide a filename, use the current directory as the default
 	if [ -z "$filename" ]
@@ -183,13 +190,13 @@ then
 	then
 		# Sets entry to be the content of the file
 		entry=$(cat tmpfile)
+		rm tmpfile
 	else
 		# No content in the file/wrong path
 		echo "No file with content found. Did you write the right path? Try again."
+		rm tmpfile
 		exit 1
 	fi
-	
-	rm tmpfile
 
 # Edit flag
 elif [ "$1" = "--edit" -o "$1" = "-e" ]
