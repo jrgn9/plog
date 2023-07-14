@@ -251,7 +251,10 @@ else
 fi
 
 # Creates timestamp in the ISO 8601 format: 'YYYY-MM-DDTHH:MM:SSZ'
-timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+#timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+# Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
+timestamp=$(date --rfc-3339=s)
 
 # Redirects the log entry to the log file
 echo -e "\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
