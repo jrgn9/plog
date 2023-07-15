@@ -160,7 +160,6 @@ then
 		exit 0
 	fi
 	
-	# THIS MIGHT BE FUCKED BECAUSE OF $(whoami) - FOLLOW UP!!!!
 	# Update author in the .config file
 	sed -i "s/author=.*/author=\"$author\"/" config
 
