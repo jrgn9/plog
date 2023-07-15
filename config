@@ -13,4 +13,4 @@ text_editor="${EDITOR:-nano}"
 #text_editor="vim"
 #text_editor="emacs"
 
-# Might add settings for auto backup and entry title
+# Might add settings for auto backup, case sensitive search and entry title
