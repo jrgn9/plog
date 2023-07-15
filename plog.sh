@@ -259,7 +259,7 @@ then
 	then
 		# If the print by search argument is added
 
-		# hecks if there is a search string provided
+		# Checks if there is a search string provided
 		if [ -n "$3" ]
 		then
 			# Sets searchstring to be the third argument
@@ -283,7 +283,34 @@ then
 			echo "No entries found matching the search string."
 			exit 1
 		fi
+	
+	elif [ "$2" = "author" ]
+	then
+		# If the print by author argument is added
+	
+		# Checks if there is an author name provided
+		if [ -n "$3" ]
+		then
+			# Sets authorname to be the third argument
+			authorname="$3"
+		else
+			read -p "Enter author name: " authorname
+		fi
 
+		# Awk sentence that redirects all matching entries to a tempfile based on the author name
+		awk -v RS="\n\n~~~~~~\n" -v author="$authorname" '/^Author: / tolower($0) ~ tolower(author) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+		
+		# If there is content in the tempfile, print and remove files
+		if [ -s "tmpfile" ]
+		then
+			cat tmpfile
+			rm tmpfile
+			exit 0
+		else
+			# If there are no entries matching the author, exit
+			echo -e "No entries found matching the author name '$authorname'."
+			exit 1
+		fi
 	else
 		# If there are no date flag
 		# Prints out the content of the entire logfile in the terminal
