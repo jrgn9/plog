@@ -14,7 +14,7 @@ fi
 ## Error handling for logs
 # Finds all .log files except backup.log
 ### In the bin file I need to use pwd to find current directory for it to be right
-logs=$(find . -name "*.log" -not -name "backup.log")
+logs=$(find . -name "*.log" -not -name "*.backup.log")
 
 # Counts the number of files found
 file_count=$(echo "$logs" | wc -l)
@@ -79,13 +79,13 @@ fi
 
 ## Set logfile to be the file found in current directory
 ### In the bin file I need to use pwd to find current directory for it to be right
-logfile=$(find . -name "*.log" -not -name "backup.log")
+logfile=$(find . -name "*.log" -not -name "*.backup.log")
 
 
 ## FLAG CHECKS
 
 # DELETE ENTRY FLAG
-if [ "$1" = "--dlast" -o "$1" = "-dl" ]
+if [ "$1" = "--delete" -o "$1" = "-d" ]
 then
 
 	# Creates a backup before removing last entry
@@ -99,19 +99,34 @@ then
 		echo "There are No entries to delete"
 		exit 1
 	else
-		# Uses awk and delimiter to seperate entries, and copies everything
-		# except the last one to a temporary file, then overwrites the log with it
-		awk -v RS="\n\n~~~~~~\n" 'BEGIN{ORS=RS} NR>1 {print prev} {prev=$0} END{}' "$logfile" > tmpfile && mv tmpfile "$logfile"
-
-		# Check if the file was modified and prints message accordingly
-		if [[ $? -eq 0 ]]
+		if [ -z "$2" ]
 		then
-			echo "Last entry deleted"
-		else
-			echo "Could not delete last entry"
+			# Invokes the program recursively if the user haven't provided a second argument
+			read -p "Do you want to delete by id or the last entry? (id/last):" answer
+			# THIS NEEDS TO BE UPDATED WHEN THE PROGRAM IS FINNISHED!
+			"./plog.sh" -d "$answer"
+
+		elif [ "$2" = "last" ]
+		then
+			# Uses awk and delimiter to seperate entries, and copies everything
+			# except the last one to a temporary file, then overwrites the log with it
+			awk -v RS="\n\n~~~~~~\n" 'BEGIN{ORS=RS} NR>1 {print prev} {prev=$0} END{}' "$logfile" > tmpfile && mv tmpfile "$logfile"
+
+			# Check if the file was modified and prints message accordingly
+			if [[ $? -eq 0 ]]
+			then
+				echo "Last entry deleted"
+			else
+				echo "Could not delete last entry"
+			fi
+		
+		elif [ "$2" = "id" -o "$2" = "ID" ]
+		then
+			echo "Delete by id"
 		fi
+
+		exit 0
 	fi
-	exit 0
 
 # REVERT TO BACKUP FLAG
 elif [ "$1" = "--revert" -o "$1" = "-r" ]
@@ -338,7 +353,6 @@ then
 		exit 1
 	fi
 
-	# This might be rewritten using 'getopts', but I think this way is sufficent
 	entry="$2"	
 else
 	# NO FLAGS
