@@ -11,10 +11,11 @@ No options: Opens the default text editor for writing longer log entries
 Options:
 -h	--help		Display this help message
 
--m	--msg		Write short message without entering a text editor. Must be in "quotes"
+-m	--msg		Write short message without entering a text editor. 
+			The text must be as a secondary option and in "quotes".
 
 -d	--delete	Delete an entry. Creates a backup file which can be reverted.
-			Supports two second arguments:
+			Second argument is required. Supports two second arguments:
 
 			- last: Deletes the last entry in the file
 			*- id: Deletes entry based on the id provided
