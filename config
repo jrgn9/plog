@@ -4,3 +4,13 @@
 ## Default: Computer user name
 
 author=$(whoami)
+
+## Change default text editor
+## Default: System default (or nano if none is set)
+## Uncomment or write your preferred editor to change
+
+text_editor="${EDITOR:-nano}"
+#text_editor="vim"
+#text_editor="emacs"
+
+# Might add settings for auto backup and entry title
