@@ -3,8 +3,6 @@
 # Fetches settings from .config
 source config
 
-
-
 ## Checks if help flag is present
 if [ "$1" = "--help" -o "$1" = "-h" ]
 then
@@ -84,17 +82,9 @@ fi
 logfile=$(find . -name "*.log" -not -name "backup.log")
 
 
-# If I want to prompt user for author every time
-# Needs to be added in msg and else if I want to use it
-: '
-elif [ ! -f ".config" -o "$author" = "$(whoami)"]
-then
-	read -p "Enter author name (use plog --author to set new default name) " author
-fi
-'
-
 ## FLAG CHECKS
-# Delete last entry flag
+
+# DELETE ENTRY FLAG
 if [ "$1" = "--dlast" -o "$1" = "-dl" ]
 then
 
@@ -104,7 +94,7 @@ then
 
 	# Checks if there are any entries (skipping the init message)
 	# REMEMBER: UPDATE NR IF I CHANGE INIT MESSAGE!!!!
-	if [[ $(awk 'NR>8' "$logfile") == "" ]]
+	if [[ $(awk 'NR>10' "$logfile") == "" ]]
 	then
 		echo "There are No entries to delete"
 		exit 1
@@ -123,7 +113,7 @@ then
 	fi
 	exit 0
 
-# Revert to backup flag
+# REVERT TO BACKUP FLAG
 elif [ "$1" = "--revert" -o "$1" = "-r" ]
 then
 	# Overwrite the other file with the backup file
@@ -132,7 +122,7 @@ then
 	echo "Backup is restored to $logfile"
 	exit 0
 
-# Change author flag
+# CHANGE AUTHOR FLAG
 elif [ "$1" = "--author" -o "$1" = "-a" ]
 then
 	# Prompt user for name
@@ -157,7 +147,7 @@ then
 	echo "To edit author use plog --author or edit the .config file manually"
 	exit 0
 
-# Import flag
+# IMPORT FLAG
 elif [ "$1" = "--import" -o "$1" = "-i" ]
 then
 	# Finds the current directory of the user
@@ -198,26 +188,50 @@ then
 		exit 1
 	fi
 
-# Edit flag
+# EDIT FLAG
 elif [ "$1" = "--edit" -o "$1" = "-e" ]
 then
 	# ADD OPTION FOR BY DATE AND BY NUMBER
 	
-	# Opens the log file with the default editor
-	"$EDITOR" "$logfile"
-	exit 0
+	# Edit arguments
+	if [ "$2" = "date" ]
+	then
+		# Edit by date argument
+		# See print date to borrow code
+		echo "Edit by date"
+		exit 0
+	
+	elif [ "$2" = "id" -o "$2" = "ID" ]
+	then
+		# Edit by id argument
+		echo "Edit by id"
+		exit 0
+	else
+		# No arguments
 
-# Print flag
+		# Opens the log file with the default editor
+		"$EDITOR" "$logfile"
+		exit 0
+	fi
+
+# PRINT FLAG
 elif [ "$1" = "--print" -o "$1" = "-p" ]
 then
-	# ADD PRINT BY NUMBER
+	# ADD PRINT BY ID
 
 	# Checks if there is a date flag for printing by date
 	if [ "$2" = "date" ]
 	then
-		# Prompts user for date
-		read -p "Enter date in format YYYY-MM-DD: " printdate
-		
+		# Checks if there is a date provided as argument
+		if [ -n "$3" ]
+		then
+			# Sets printdate to be third argument
+			printdate="$3"t
+		else
+			# No third argument, prompts user for date
+			read -p "Enter date in format YYYY-MM-DD: " printdate
+		fi
+
 		# Awk sentence that redirects all matching dates to a tempfile
 		# For some reason it considers the init text to be a part of the first entry
 		awk -v RS="\n\n~~~~~~\n" -v date="$printdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
@@ -234,6 +248,42 @@ then
 			rm tmpfile
 			exit 1
 		fi
+
+	elif [ "$2" = "id" -o "$2" = "ID" ]
+	then
+		# If the print by id argument is added
+		echo "Print by id"
+		exit 0
+
+	elif [ "$2" = "search" ]
+	then
+		# If the print by search argument is added
+
+		# hecks if there is a search string provided
+		if [ -n "$3" ]
+		then
+			# Sets searchstring to be the third argument
+			searchstring="$3"
+		else
+			read -p "Enter search string: " searchstring
+		fi
+
+		# Awk sentence that redirects all matching entries to a tempfile based on the search string
+		# The search string is matched anywhere in the entry
+		awk -v RS="\n\n~~~~~~\n" -v search="$searchstring" 'tolower($0) ~ tolower(search) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+		
+		# If there is content in the tempfile, print and remove files
+		if [ -s "tmpfile" ]
+		then
+			cat tmpfile
+			rm tmpfile
+			exit 0
+		else
+			# If there are no entries matching the search, exit
+			echo "No entries found matching the search string."
+			exit 1
+		fi
+
 	else
 		# If there are no date flag
 		# Prints out the content of the entire logfile in the terminal
@@ -241,7 +291,7 @@ then
 		exit 0
 	fi
 
-# Short message flag
+# SHORT MESSAGE FLAG
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then	
 	# Removes backup if there is one from previously deleting last entry
@@ -264,6 +314,8 @@ then
 	# This might be rewritten using 'getopts', but I think this way is sufficent
 	entry="$2"	
 else
+	# NO FLAGS
+
 	# Checks if there are no flags provided to ensure positional arguments
 	if [ ! -z "$2" ]
 	then
@@ -297,11 +349,12 @@ else
 	rm "$tmpfile"
 fi
 
-# Creates timestamp in the ISO 8601 format: 'YYYY-MM-DDTHH:MM:SSZ'
-#timestamp=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+# ADD ENTRY TO LOG FILE
 
 # Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
 timestamp=$(date --rfc-3339=s)
+
+### ADD ENTRY ID
 
 # Redirects the log entry to the log file
 echo -e "\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
