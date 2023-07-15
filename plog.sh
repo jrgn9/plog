@@ -148,6 +148,16 @@ then
 	then
 		echo "Error: No author name provided. Author not changed"
 		exit 1
+	
+	elif [ "$author" = "user" -o "$author" = "User" ]
+	then
+		sed -i "s/author=.*/author=\$(whoami)/" config
+		
+		source config
+		
+		echo "Author successfully reverted to computer user name: $author"
+		
+		exit 0
 	fi
 	
 	# THIS MIGHT BE FUCKED BECAUSE OF $(whoami) - FOLLOW UP!!!!
