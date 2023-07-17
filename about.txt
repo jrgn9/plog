@@ -1,0 +1,13 @@
+
+-\     plog
+  \_________
+   (o) J J J
+
+plog is a command line tool for creating project logs.
+Made by Jørgen Skontorp
+Licensed under GLP-3.0
+
+Version 0.1.0-pre-alpha
+
+Please use Github for reporting bugs and to find the latest version:
+https://github.com/jrgn9/plog
