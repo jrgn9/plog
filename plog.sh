@@ -342,6 +342,27 @@ then
 		exit 0
 	fi
 
+# ABOUT FLAG
+elif [ "$1" = "--about" ]
+then
+	# FIX PATH FOR THIS AFTER INSTALLER
+	cat about.txt
+	exit 0
+
+# SETTINGS FLAG
+elif [ "$1" = "--settings" ]
+then
+	# Opens config file in default text editor
+	# FIX PATH AFTER INSTALLER
+	"$text_editor" config
+	exit 0
+
+# UNINSTALL FLAG
+elif [ "$1" = "--uninstall" ]
+then
+	echo "An uninstall script will run when this is done"
+	exit 0
+
 # SHORT MESSAGE FLAG
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
 then	
