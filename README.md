@@ -22,7 +22,9 @@ plog will then create a log file in the current directory.
 
 This program will have an installer script when I am done with pre-alpha. 
 
-MORE ON HOW INSTALL WILL BE LIKE HERE LATER
+Make sure install.sh have execution rights with `chmod +x install.sh`. Then run the script with sudo so that the script have access to moving the binary file to /usr/bin: `sudo ./install.sh`
+
+The install script moves the programs binary file to /usr/bin so that the program can be executed from wherever. It creates a .plog folder in /home/$USER/ where all the program files are located. This is also the folder where backups will be saved.
 
 ## How to use
 Invoke plog with ./plog.sh. *Usage:* ./plog.sh [option]. 
