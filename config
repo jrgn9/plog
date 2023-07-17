@@ -13,4 +13,8 @@ text_editor="${EDITOR:-nano}"
 #text_editor="vim"
 #text_editor="emacs"
 
+## Default path for program files
+## Move the .plog folder and change the path here if you want to locate the program folder elsewhere
+program_folder="/home/$USER/.plog"
+
 # Might add settings for auto backup, case sensitive search and entry title
