@@ -50,27 +50,15 @@ then
 		echo "Creating file $filename.log in current directory"
 		touch "$filename.log"
 
-		# Adding start of the document by using Here Document for multi-line
-		# Maybe add this as an seperate document in the install version to be able to edit
-		# the init message?
-		init=$(cat <<-EOF
-		*************************************************
-		THIS IS A LOG FILE CREATED BY PLOG
-		IN TERMINAL: 'plog --help' FOR HELP MENU
-		OR SEE README FOR DOCUMENTATION
-		
-		WARNING: 
-		DO NOT EDIT THE FORMAT OF THIS FILE, ONLY CONTENT
-		*************************************************
+		read -p "Enter title for the document: " title
 
-		---START OF LOG---
-		EOF
-		)
-	
-		# Adds the init message to the log file
-		echo -e "$init" > $filename.log
+		# Adds the init message and title to the log file
+		cat ./init.txt > $filename.log
+		echo -e "---START OF LOG---\n" >> $filename.log
+		echo -e "$title" >> $filename.log
+		echo -e "\n~~~~~~" >> $filename.log
 
-		#### Might add prompt for title and description for start of the log
+		#### Might add prompt for description for start of the log
 	else
 		echo "No log file created"
 		exit 1
