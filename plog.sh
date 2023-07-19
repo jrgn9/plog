@@ -238,7 +238,7 @@ then
 		if [ -n "$3" ]
 		then
 			# Sets printdate to be third argument
-			printdate="$3"t
+			printdate="$3"
 		else
 			# No third argument, prompts user for date
 			read -p "Enter date in format YYYY-MM-DD: " printdate
@@ -413,8 +413,20 @@ fi
 # Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
 timestamp=$(date --rfc-3339=s)
 
-### ADD ENTRY ID
+# Add entry ID
+# Uses grep and awk to search for last entry number. Extracts number from # and sorts the numbers
+last_entry_number=$(grep -o "Entry #[0-9]*" "$logfile" | awk -F '#' '{print $NF}' | sort -n | tail -n 1)
+
+# If there is a last entry number
+if [ -n "$last_entry_number" ]
+then
+	# New entry number is last + 1
+	entry_number=$((last_entry_number + 1))
+else
+	# If there are no last entry number, entry number is 1
+	entry_number=1
+fi
 
 # Redirects the log entry to the log file
-echo -e "\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
+echo -e "\nEntry #$entry_number\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
 echo -e "\nEntry added to ${logfile:2}"
