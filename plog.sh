@@ -124,7 +124,7 @@ fi
 # DELETE ENTRY FLAG
 if [ "$1" = "--delete" -o "$1" = "-d" ]
 then
-	# Creates a backup before removing last entry
+	# Creates a backup before deleting entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" "$logfile".backup.log
 
@@ -167,6 +167,7 @@ then
 			
 			else
 				# Sets searchid to be Entry # and the provided number
+				echo "Delete by entry number"
 				read -p "Enter entry number to delete: " deleteidnumber
 				delete_id="Entry #$deleteidnumber"
 			fi
@@ -271,14 +272,79 @@ then
 # EDIT FLAG
 elif [ "$1" = "--edit" -o "$1" = "-e" ]
 then
-	# ADD OPTION FOR BY DATE AND BY NUMBER
+	# Creates a backup before editing entries
+	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
+	cp "$logfile" "$logfile".backup.log
 	
 	# Edit arguments
 	if [ "$2" = "date" ]
 	then
 		# Edit by date argument
-		# See print date to borrow code
-		echo "Edit by date"
+		
+		# Checks if there is a date provided as argument
+		if [ -n "$3" ]
+		then
+			# Sets editdate to be third argument
+			editdate="$3"
+		else
+			# No third argument, prompts user for date
+			echo "Edit by date"
+			read -p "Enter date in format YYYY-MM-DD: " editdate
+		fi	
+		
+		# Awk sentence that redirects all matching dates to a tempfile
+        	awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+		# If there is content in the tempfile, open it in the editor
+        	if [ -s "tmpfile" ]
+       		then
+			# Open temp file with matching entries in default text editor
+			"$text_editor" "tmpfile"
+            
+            		# Ask the user if they want to save the changes
+            		read -p "Do you want to save the changes? (y/n): " save_changes
+			
+			if [ "$save_changes" = "y" ]
+			then
+				# Get the edited entries from the tmp file
+				edited_entries=$(awk -v RS="\n\n~~~~~~\n" '{print}' "tmpfile")
+				
+				# Check if any dates were modified in the edited content
+				edited_dates=$(echo "$edited_entries" | awk -v RS="\n\n~~~~~~\n" -v date="$editdate" 'BEGIN { FS = "\n" } $0 ~ date { print substr($0, 1, 10); exit }')
+				
+				# Checks if the edited dates matches the date provided (users can't edit dates)
+				if [ "$edited_dates" != "$editdate" ]
+         			then
+					echo "Error: Dates cannot be modified. Changes not saved."
+					echo "Please ensure that you do not modify the date during editing."
+					rm tmpfile
+					exit 1
+
+				else
+					# Awk sentence to overwrite entries with matching dates in the original log file
+					awk -v RS="\n\n~~~~~~\n" -v date="$editdate" -v entries="$edited_entries" '{
+					if ($0 ~ date) {
+						print entries
+					} else {
+						print $0 "\n\n~~~~~~"
+						}
+				    	}' "$logfile" > tmpfile2 && mv tmpfile2 "$logfile"
+				    
+				    	echo "Changes saved."
+				fi
+			else
+				# User do not want to save changes
+				echo "Changes discarded."
+			fi
+			
+			# Remove the temporary file
+			rm tmpfile
+        	else
+			# If there are no entries found for the provided date, display a message
+			echo "No entries found for the provided date. Check if you have used the correct date format."
+			rm tmpfile
+			exit 1
+		fi
+
 		exit 0
 	
 	elif [ "$2" = "id" -o "$2" = "ID" ]
@@ -286,6 +352,13 @@ then
 		# Edit by id argument
 		echo "Edit by id"
 		exit 0
+
+	elif [ "$2" = "last" ]
+	then
+		# Edit last entry
+		echo "Edit last entry"
+		exit 0
+
 	else
 		# No arguments
 
