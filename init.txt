@@ -1,9 +1,9 @@
-*************************************************
+******************************************************
 THIS IS A LOG FILE CREATED BY PLOG
 IN TERMINAL: 'plog --help' FOR HELP MENU
 OR SEE README FOR DOCUMENTATION
 
 WARNING: 
-DO NOT EDIT THE FORMAT OF THIS FILE, ONLY CONTENT
-*************************************************
+DO NOT EDIT THE FORMAT OF THE LOG FILE - ONLY CONTENT!
+******************************************************
 
