@@ -3,7 +3,10 @@
 # Fetches settings from .config
 source config
 
-## Checks for meta flags
+# Finds current directory
+current_directory="$(pwd)"
+
+## CHECKS FOR META FLAGS
 # HELP FLAG
 if [ "$1" = "--help" -o "$1" = "-h" ]
 then
@@ -42,10 +45,10 @@ then
 	exit 0
 fi
 
-## Error handling for logs
+## ERROR HANDLING FOR LOGS
 # Finds all .log files except backup.log
 ### In the bin file I need to use pwd to find current directory for it to be right
-logs=$(find . -name "*.log" -not -name "*.backup.log")
+logs=$(find "$current_directory" -name "*.log" -not -name "*.backup.log")
 
 # Counts the number of files found
 file_count=$(echo "$logs" | wc -l)
@@ -98,7 +101,22 @@ fi
 
 ## Set logfile to be the file found in current directory
 ### In the bin file I need to use pwd to find current directory for it to be right
-logfile=$(find . -name "*.log" -not -name "*.backup.log")
+logfile=$(find "$current_directory" -name "*.log" -not -name "*.backup.log")
+
+
+# ADD ENTRY ID
+# Uses grep and awk to search for last entry number. Extracts number from # and sorts the numbers
+last_entry_number=$(grep -o "Entry #[0-9]*" "$logfile" | awk -F '#' '{print $NF}' | sort -n | tail -n 1)
+
+# If there is a last entry number
+if [ -n "$last_entry_number" ]
+then
+	# New entry number is last + 1
+	entry_number=$((last_entry_number + 1))
+else
+	# If there are no last entry number, entry number is 1
+	entry_number=1
+fi
 
 
 ## FLAG CHECKS
@@ -106,7 +124,6 @@ logfile=$(find . -name "*.log" -not -name "*.backup.log")
 # DELETE ENTRY FLAG
 if [ "$1" = "--delete" -o "$1" = "-d" ]
 then
-
 	# Creates a backup before removing last entry
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" "$logfile".backup.log
@@ -134,7 +151,8 @@ then
 			# Check if the file was modified and prints message accordingly
 			if [[ $? -eq 0 ]]
 			then
-				echo "Last entry deleted"
+				
+				echo "Entry #$last_entry_number deleted"
 			else
 				echo "Could not delete last entry"
 			fi
@@ -193,26 +211,23 @@ then
 # IMPORT FLAG
 elif [ "$1" = "--import" -o "$1" = "-i" ]
 then
-	# Finds the current directory of the user
-	current_dir=$(pwd)
-
 	# Checks if user has provided file as argument to skip being prompted
 	if [ -e "$2" ]
 	then
 		filename="$2"
 	else
 	
-		echo "Enter the file name or relative path of the file to import (default: $current_dir/):"
+		echo "Enter the file name or relative path of the file to import (default: $current_directory/):"
 		read filename
 	fi
 	
 	# If the user didn't provide a filename, use the current directory as the default
 	if [ -z "$filename" ]
 	then
-		filepath="$current_dir/"
+		filepath="$current_directory/"
 	else
 		# Combine the filename with the current directory to form the relative path
-		filepath="$current_dir/$filename"
+		filepath="$current_directory/$filename"
 	fi
 
 	# Redirects content of the file to a tempfile
@@ -423,20 +438,7 @@ fi
 # Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
 timestamp=$(date --rfc-3339=s)
 
-# Add entry ID
-# Uses grep and awk to search for last entry number. Extracts number from # and sorts the numbers
-last_entry_number=$(grep -o "Entry #[0-9]*" "$logfile" | awk -F '#' '{print $NF}' | sort -n | tail -n 1)
-
-# If there is a last entry number
-if [ -n "$last_entry_number" ]
-then
-	# New entry number is last + 1
-	entry_number=$((last_entry_number + 1))
-else
-	# If there are no last entry number, entry number is 1
-	entry_number=1
-fi
 
 # Redirects the log entry to the log file
 echo -e "\nEntry #$entry_number\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
-echo -e "\nEntry added to ${logfile:2}"
+echo -e "\nEntry #$entry_number added to ${logfile}"
