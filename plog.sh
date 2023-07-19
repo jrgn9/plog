@@ -3,11 +3,42 @@
 # Fetches settings from .config
 source config
 
-## Checks if help flag is present
+## Checks for meta flags
+# HELP FLAG
 if [ "$1" = "--help" -o "$1" = "-h" ]
 then
 	# Prints help message and exits
-	echo "$(cat ./help.txt)"
+	# FIX PATH FOR THIS AFTER INSTALLER
+	cat help.txt
+	exit 0
+
+# ABOUT FLAG
+elif [ "$1" = "--about" ]
+then
+	# FIX PATH FOR THIS AFTER INSTALLER
+	cat about.txt
+	exit 0
+
+# SETTINGS FLAG
+elif [ "$1" = "--settings" ]
+then
+	# Opens config file in default text editor
+	# FIX PATH AFTER INSTALLER
+	"$text_editor" config
+	exit 0
+
+# INIT FLAG
+elif [ "$1" = "--init" ]
+then
+	# Opens init file in default text editor
+	# FIX PATH AFTER INSTALLER
+	"$text_editor" init.txt
+	exit 0
+
+# UNINSTALL FLAG
+elif [ "$1" = "--uninstall" ]
+then
+	echo "An uninstall script will run when this is done"
 	exit 0
 fi
 
@@ -329,35 +360,6 @@ then
 		cat "$logfile"
 		exit 0
 	fi
-
-# ABOUT FLAG
-elif [ "$1" = "--about" ]
-then
-	# FIX PATH FOR THIS AFTER INSTALLER
-	cat about.txt
-	exit 0
-
-# SETTINGS FLAG
-elif [ "$1" = "--settings" ]
-then
-	# Opens config file in default text editor
-	# FIX PATH AFTER INSTALLER
-	"$text_editor" config
-	exit 0
-
-# INIT FLAG
-elif [ "$1" = "--init" ]
-then
-	# Opens init file in default text editor
-	# FIX PATH AFTER INSTALLER
-	"$text_editor" init.txt
-	exit 0
-
-# UNINSTALL FLAG
-elif [ "$1" = "--uninstall" ]
-then
-	echo "An uninstall script will run when this is done"
-	exit 0
 
 # SHORT MESSAGE FLAG
 elif [ "$1" = "--msg" -o "$1" = "-m" ]
