@@ -5,7 +5,7 @@
 
 plog is a command line tool for creating project logs.
 Made by Jørgen Skontorp
-Licensed under GLP-3.0
+Licensed under GNU GPL-3.0
 
 Version 0.1.0-pre-alpha
 
