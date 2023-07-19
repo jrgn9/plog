@@ -159,7 +159,29 @@ then
 		
 		elif [ "$2" = "id" -o "$2" = "ID" ]
 		then
-			echo "Delete by id"
+			# Checks if id is provided as argument
+			if [ -n "$3" ]
+			then
+				# Sets searchid to be Entry # and third argument
+				delete_id="Entry #$3"
+			
+			else
+				# Sets searchid to be Entry # and the provided number
+				read -p "Enter entry number to delete: " deleteidnumber
+				delete_id="Entry #$deleteidnumber"
+			fi
+
+
+			awk -v RS="\n\n~~~~~~\n" -v delete_id="$delete_id" 'tolower($0) ~ "(^|[^0-9])" tolower(delete_id) "([^0-9]|$)" { next } { print prev "\n\n~~~~~~" } { prev = $0 } END { print prev }' "$logfile" > tmpfile && mv tmpfile "$logfile"
+		
+			# Check if the file was modified and prints message accordingly
+			if [[ $? -eq 0 ]]
+			then
+				
+				echo "$delete_id deleted"
+			else
+				echo "Could not delete $delete_id"
+			fi
 		fi
 
 		exit 0
@@ -275,8 +297,6 @@ then
 # PRINT FLAG
 elif [ "$1" = "--print" -o "$1" = "-p" ]
 then
-	# ADD PRINT BY ID
-
 	# Checks if there is a date flag for printing by date
 	if [ "$2" = "date" ]
 	then
