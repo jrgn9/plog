@@ -18,7 +18,7 @@ Options:
 			Second argument is required. Supports two second arguments:
 
 			- last: Deletes the last entry in the file
-			*- id: Deletes entry based on the id provided
+			- id: Deletes entry based on the id provided
 
 -e	--edit		Opens the log file in your default text editor for editing.
 			Opens the whole file by default, but supports three second arguments:
@@ -30,7 +30,7 @@ Options:
 -p	--print		Prints log entries to terminal. Prints the whole file if no extra arguments are present.
 			Supports four second arguments:
 
-			*- id: Prints entry based on the id provided
+			- id: Prints entry based on the id provided
 			- date: Prints all entries based on the date provided (YYYY-MM-DD format)
 			- author: Prints all entries from the provided author (case insensitive)
 			- search: Prints all entries that matches search query (case insensitive)
@@ -46,8 +46,9 @@ Options:
 			Write 'user' to revert back to default author name.
 
 
-*	--settings	Opens the config file to change settings
-*	--about		About this program
+	--settings	Opens the config file to change settings
+	--init		Opens an editor for changing the initialization text at the start of a new document
+	--about		About this program
 *	--uninstall	Uninstall plog by running uninstall script (log files not affected)
 
 *not yet implemented
