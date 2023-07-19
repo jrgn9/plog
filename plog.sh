@@ -310,7 +310,35 @@ then
 	elif [ "$2" = "id" -o "$2" = "ID" ]
 	then
 		# If the print by id argument is added
-		echo "Print by id"
+		
+		# Checks if id is provided as argument
+		if [ -n "$3" ]
+		then
+			# Sets searchid to be Entry # and third argument
+			searchid="Entry #$3"
+		
+		else
+			# Sets searchid to be Entry # and the provided number
+			read -p "Enter entry number: " searchidnumber
+			searchid="Entry #$searchidnumber"
+		fi
+
+		# Awk sentence that redirects all matching entries to a tempfile based on the entry id
+		# The id number is match exactly on the given number
+		awk -v RS="\n\n~~~~~~\n" -v search="$searchid" 'tolower($0) "(^|[^0-9])" ~ tolower(search) "([^0-9]|$)" { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+		
+		# If there is content in the tempfile, print and remove files
+		if [ -s "tmpfile" ]
+		then
+			cat tmpfile
+			rm tmpfile
+			exit 0
+		else
+			# If there are no entries matching the search, exit
+			echo "No entries found matching the entry number."
+			exit 1
+		fi
+
 		exit 0
 
 	elif [ "$2" = "search" ]
@@ -370,7 +398,7 @@ then
 			exit 1
 		fi
 	else
-		# If there are no date flag
+		# If there are no secondary flags
 		# Prints out the content of the entire logfile in the terminal
 		cat "$logfile"
 		exit 0
@@ -437,7 +465,6 @@ fi
 
 # Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
 timestamp=$(date --rfc-3339=s)
-
 
 # Redirects the log entry to the log file
 echo -e "\nEntry #$entry_number\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
