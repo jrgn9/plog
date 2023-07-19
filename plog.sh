@@ -222,7 +222,7 @@ then
 		# No arguments
 
 		# Opens the log file with the default editor
-		"$EDITOR" "$logfile"
+		"$text_editor" "$logfile"
 		exit 0
 	fi
 
@@ -391,7 +391,7 @@ else
 	tmpfile=$(mktemp)
 
 	# Opens default text editor
-	"$EDITOR" "$tmpfile"
+	"$text_editor" "$tmpfile"
 	
 	# Checks if the file size is greater than zero
 	if [ -s "$tmpfile" ]
