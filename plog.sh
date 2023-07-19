@@ -345,6 +345,14 @@ then
 	"$text_editor" config
 	exit 0
 
+# INIT FLAG
+elif [ "$1" = "--init" ]
+then
+	# Opens init file in default text editor
+	# FIX PATH AFTER INSTALLER
+	"$text_editor" init.txt
+	exit 0
+
 # UNINSTALL FLAG
 elif [ "$1" = "--uninstall" ]
 then
