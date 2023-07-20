@@ -305,17 +305,28 @@ then
 			
 			if [ "$save_changes" = "y" ]
 			then
-				# Get the edited entries from the tmp file
-				edited_entries=$(awk -v RS="\n\n~~~~~~\n" '{print}' "tmpfile")
+				# Get the edited entries from the tmp file and adds in the delimiter
+				edited_entries=$(awk -v RS="\n\n~~~~~~\n" '{
+					print $0 "\n\n~~~~~~"
+				}' "tmpfile")
 
-				echo "$edited_entries"
-				
 				# Check if any dates were modified in the edited content
-				edited_dates=$(echo "$edited_entries" | awk -v RS="\n\n~~~~~~\n" -v date="$editdate" 'BEGIN { FS = "\n" } $0 ~ date { print substr($0, 1, 10); exit }')
-				
+				edited_dates=$(echo "$edited_entries" | awk -v RS="\n\n~~~~~~\n" -v date="$editdate" ' 
+				{
+					if ($0 ~ date) {
+						match($0, /^[0-9]{4}-[0-9]{2}-[0-9]{2}/)
+						date_str = substr($0, RSTART, RLENGTH)
+						if (date_str != date) {
+							print date_str
+							exit
+						}
+					}
+				}
+				')
+
 				# Checks if the edited dates matches the date provided (users can't edit dates)
-				if [ "$edited_dates" != "$editdate" ]
-         			then
+				if [ -n "$edited_dates" ]
+				then
 					echo "Error: Dates cannot be modified. Changes not saved."
 					echo "Please ensure that you do not modify the date during editing."
 					rm tmpfile
