@@ -307,6 +307,8 @@ then
 			then
 				# Get the edited entries from the tmp file
 				edited_entries=$(awk -v RS="\n\n~~~~~~\n" '{print}' "tmpfile")
+
+				echo "$edited_entries"
 				
 				# Check if any dates were modified in the edited content
 				edited_dates=$(echo "$edited_entries" | awk -v RS="\n\n~~~~~~\n" -v date="$editdate" 'BEGIN { FS = "\n" } $0 ~ date { print substr($0, 1, 10); exit }')
@@ -317,6 +319,10 @@ then
 					echo "Error: Dates cannot be modified. Changes not saved."
 					echo "Please ensure that you do not modify the date during editing."
 					rm tmpfile
+					
+					echo "edited_dates was: $edited_dates"
+					echo "editdate was: $editdate"
+
 					exit 1
 
 				else
