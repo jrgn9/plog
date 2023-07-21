@@ -275,6 +275,14 @@ then
 	# Creates a backup before editing entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" "$logfile".backup.log
+
+	# Edit warning for the user (can be turned off in settings)
+	if [ "$edit_warning" = "on" ]
+	then
+		echo "WARNING: Do not edit the log format, dates or separators!"
+		echo "This can have unintended consequences! (this warning can be turned off in settings)"
+		sleep 3
+	fi
 	
 	# Edit arguments
 	if [ "$2" = "date" ]
@@ -294,75 +302,103 @@ then
 		
 		# Awk sentence that redirects all matching dates to a tempfile
         	awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+		# Store the original content in a variable before editing
+		original_entries=$(awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile")
+
 		# If there is content in the tempfile, open it in the editor
         	if [ -s "tmpfile" ]
        		then
 			# Open temp file with matching entries in default text editor
 			"$text_editor" "tmpfile"
             
-            		# Ask the user if they want to save the changes
-            		read -p "Do you want to save the changes? (y/n): " save_changes
+			# Get the edited entries from the tmp file and adds in the delimiter
+			#edited_entries=$(awk -v RS="\n\n~~~~~~\n" '{print $0 "\n\n~~~~~~"}' "tmpfile")
+			edited_entries=$(cat "tmpfile")
+
+			# Checks number of entries before and after editing
+			num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
+			num_entries_after=$(echo "$edited_entries" | grep -o "~~~~~~" | wc -l)
+			echo "entries before: $num_entries_before  entries after: $num_entries_after"
 			
-			if [ "$save_changes" = "y" ]
+			# Checks the date of the entries before and after editing
+			#original_date=$(awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $2; exit }' "$logfile")
+			#edited_date=$(awk -F "\n" 'NR == 2 { print $2; exit }' "tmpfile")
+			#original_dates=$(printf '%s' "$original_entries" | awk -F '\n' 'NR==2{print substr($0, 1, 10)}')
+			#edited_dates=$(printf '%s' "$edited_entries" | awk -F '\n' 'NR==2{print substr($0, 1, 10)}')
+			
+			
+			# Creates two arrays to hold the dates from before and after editing
+			original_dates=()
+			edited_dates=()
+
+			# Function to extract dates from entries using awk
+			extract_dates() {
+				awk -F '\n' 'BEGIN { RS = "\n\n~~~~~~\n" } /^Entry #/ { 
+				split($2, date_parts, " ");
+				print date_parts[1]; }' <<< "$1"
+			}
+
+			# Extract dates from original and edited dates using mapfile and the function
+			#mapfile -t original_dates < <(extract_dates "$original_entries")
+			#mapfile -t edited_dates < <(extract_dates "$edited_entries")
+			
+			while IFS= read -r date
+			do
+				original_dates+=("$date")
+			done < <(extract_dates "$original_entries")
+
+			while IFS= read -r date
+			do
+				edited_dates+=("$date")
+			done < <(extract_dates "$edited_entries")
+
+			echo -e "original dates: ${original_dates[@]}   edited dates: ${edited_dates[@]}"
+
+			# Error handling in case user has edited dates or number of entries
+			if [ "$num_entries_before" != "$num_entries_after" ]
 			then
-				# Get the edited entries from the tmp file and adds in the delimiter
-				edited_entries=$(awk -v RS="\n\n~~~~~~\n" '{
-					print $0 "\n\n~~~~~~"
-				}' "tmpfile")
+				echo "Warning: The number of log entries has been modified. This might be due to editing seperators or the format."
+				echo "Before editing: $num_entries_before entries"
+				echo "After editing: $num_entries_after entries"
+				read -p "Are you sure you want to save your changes? (y/n): " error_answer
+				edit_error=1
 
-				# Check if any dates were modified in the edited content
-				edited_dates=$(echo "$edited_entries" | awk -v RS="\n\n~~~~~~\n" -v date="$editdate" ' 
-				{
-					if ($0 ~ date) {
-						match($0, /^[0-9]{4}-[0-9]{2}-[0-9]{2}/)
-						date_str = substr($0, RSTART, RLENGTH)
-						if (date_str != date) {
-							print date_str
-							exit
-						}
-					}
-				}
-				')
-
-				# Checks if the edited dates matches the date provided (users can't edit dates)
-				if [ -n "$edited_dates" ]
-				then
-					echo "Error: Dates cannot be modified. Changes not saved."
-					echo "Please ensure that you do not modify the date during editing."
-					rm tmpfile
-					
-					echo "edited_dates was: $edited_dates"
-					echo "editdate was: $editdate"
-
-					exit 1
-
-				else
-					# Awk sentence to overwrite entries with matching dates in the original log file
-					awk -v RS="\n\n~~~~~~\n" -v date="$editdate" -v entries="$edited_entries" '{
-					if ($0 ~ date) {
-						print entries
-					} else {
-						print $0 "\n\n~~~~~~"
-						}
-				    	}' "$logfile" > tmpfile2 && mv tmpfile2 "$logfile"
-				    
-				    	echo "Changes saved."
-				fi
-			else
-				# User do not want to save changes
-				echo "Changes discarded."
+			elif [ "$original_dates" != "$edited_dates" ]
+			then
+				echo "Warning: Dates have been modified. This can have unexpected consequences"
+				read -p "Are you sure you want to save your changes? (y/n): " error_answer
+				edit_error=1
 			fi
 			
-			# Remove the temporary file
-			rm tmpfile
-        	else
-			# If there are no entries found for the provided date, display a message
-			echo "No entries found for the provided date. Check if you have used the correct date format."
-			rm tmpfile
-			exit 1
-		fi
+			# Continues to overwrite changes if there are no errors 
+			# or the user wants to continue anyways
+			if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
+			then
+				# Awk sentence to overwrite entries with matching dates in the original log file
+				awk -v RS="\n\n~~~~~~\n" -v date="$editdate" -v entries="$edited_entries" '{
+				if ($0 ~ date) {
+					print entries
+				} else {
+					print $0 "\n\n~~~~~~"
+					}
+				}' "$logfile" > tmpfile2 && mv tmpfile2 "$logfile"
+				    
+			    	echo "Changes saved."
 
-		exit 0
+			else
+				echo "No changes were saved."
+			fi
+			
+		# Remove the temporary file
+		rm tmpfile
+	else
+		# If there are no entries found for the provided date, display a message		
+		echo "No entries found for the provided date. Check if you have used the correct date format."
+		rm tmpfile
+		exit 1
+	fi
+	
+	exit 0
 	
 	elif [ "$2" = "id" -o "$2" = "ID" ]
 	then
@@ -381,6 +417,9 @@ then
 
 		# Opens the log file with the default editor
 		"$text_editor" "$logfile"
+
+		# Check if there was any changes and print message accordingly
+
 		exit 0
 	fi
 
