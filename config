@@ -17,4 +17,8 @@ text_editor="${EDITOR:-nano}"
 ## Move the .plog folder and change the path here if you want to locate the program folder elsewhere
 program_folder="/home/$USER/.plog"
 
+# Enables warning message before editing
+# change it to "off" to turn off the warning
+edit_warning="off"
+
 # Might add settings for auto backup, case sensitive search and entry title
