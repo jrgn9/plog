@@ -318,42 +318,7 @@ then
 			# Checks number of entries before and after editing
 			num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
 			num_entries_after=$(echo "$edited_entries" | grep -o "~~~~~~" | wc -l)
-			echo "entries before: $num_entries_before  entries after: $num_entries_after"
 			
-			# Checks the date of the entries before and after editing
-			#original_date=$(awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $2; exit }' "$logfile")
-			#edited_date=$(awk -F "\n" 'NR == 2 { print $2; exit }' "tmpfile")
-			#original_dates=$(printf '%s' "$original_entries" | awk -F '\n' 'NR==2{print substr($0, 1, 10)}')
-			#edited_dates=$(printf '%s' "$edited_entries" | awk -F '\n' 'NR==2{print substr($0, 1, 10)}')
-			
-			
-			# Creates two arrays to hold the dates from before and after editing
-			original_dates=()
-			edited_dates=()
-
-			# Function to extract dates from entries using awk
-			extract_dates() {
-				awk -F '\n' 'BEGIN { RS = "\n\n~~~~~~\n" } /^Entry #/ { 
-				split($2, date_parts, " ");
-				print date_parts[1]; }' <<< "$1"
-			}
-
-			# Extract dates from original and edited dates using mapfile and the function
-			#mapfile -t original_dates < <(extract_dates "$original_entries")
-			#mapfile -t edited_dates < <(extract_dates "$edited_entries")
-			
-			while IFS= read -r date
-			do
-				original_dates+=("$date")
-			done < <(extract_dates "$original_entries")
-
-			while IFS= read -r date
-			do
-				edited_dates+=("$date")
-			done < <(extract_dates "$edited_entries")
-
-			echo -e "original dates: ${original_dates[@]}   edited dates: ${edited_dates[@]}"
-
 			# Error handling in case user has edited dates or number of entries
 			if [ "$num_entries_before" != "$num_entries_after" ]
 			then
@@ -362,35 +327,41 @@ then
 				echo "After editing: $num_entries_after entries"
 				read -p "Are you sure you want to save your changes? (y/n): " error_answer
 				edit_error=1
-
-			elif [ "$original_dates" != "$edited_dates" ]
-			then
-				echo "Warning: Dates have been modified. This can have unexpected consequences"
-				read -p "Are you sure you want to save your changes? (y/n): " error_answer
-				edit_error=1
 			fi
-			
+
+			# MIGHT ADD ERROR HANDLING FOR EDITING DATES AND ENTRY NUMBERS
+			# SEE GIT COMMIT ab9489e69a12df3f16f38989b03b129f37aa5ef9
+
 			# Continues to overwrite changes if there are no errors 
 			# or the user wants to continue anyways
 			if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
 			then
-				# Awk sentence to overwrite entries with matching dates in the original log file
-				awk -v RS="\n\n~~~~~~\n" -v date="$editdate" -v entries="$edited_entries" '{
-				if ($0 ~ date) {
-					print entries
-				} else {
-					print $0 "\n\n~~~~~~"
+
+				awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '
+					$0 ~ date {
+						if (found) {
+							after = after $0 "\n\n~~~~~~"
+						} else {
+							before = before $0 "\n\n~~~~~~"
+						}
+						next
 					}
-				}' "$logfile" > tmpfile2 && mv tmpfile2 "$logfile"
-				    
-			    	echo "Changes saved."
+					{ before = before $0 "\n\n~~~~~~" }
+					END { print before, after }
+				' "$logfile" > tmpfile2
+
+				cat tmpfile2 <<< "$edited_entries" > tmpfile3
+
+				mv tmpfile3 "$logfile"
+
+				echo "Changes saved."
 
 			else
 				echo "No changes were saved."
 			fi
 			
 		# Remove the temporary file
-		rm tmpfile
+		rm tmpfile tmpfile2
 	else
 		# If there are no entries found for the provided date, display a message		
 		echo "No entries found for the provided date. Check if you have used the correct date format."
