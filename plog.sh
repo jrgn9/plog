@@ -188,8 +188,8 @@ then
 		exit 0
 	fi
 
-# REVERT TO BACKUP FLAG
-elif [ "$1" = "--revert" -o "$1" = "-r" ]
+# RESTORE TO BACKUP FLAG
+elif [ "$1" = "--restore" -o "$1" = "-r" ]
 then
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log

@@ -39,7 +39,7 @@ Options:
 			Uses relative path based on your current directory.
 			Prompts you for file path or you can provide it as a second argument.
 
--r	--revert	Revert log file back to before doing an edit/deletion. 
+-r	--restore	Restore log file back to before doing an edit/deletion. 
 			A backup is created after deleting or editing a file, in case of accidents.
 
 -a	--author	Set author name in config. Default is the computer user name.
