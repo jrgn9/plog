@@ -337,22 +337,53 @@ then
 			if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
 			then
 
-				awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '
-					$0 ~ date {
-						if (found) {
-							after = after $0 "\n\n~~~~~~"
-						} else {
-							before = before $0 "\n\n~~~~~~"
+				# Function to extract entries from the log file based on the edit date
+				extract_entries() {
+					awk -v RS="\n\n~~~~~~\n" -v date="$1" -v position="$2" '
+						BEGIN { 
+							print_before = 1; print_after = 0; found = 0; 
+							printed_before = 0; printed_after = 0 
 						}
-						next
-					}
-					{ before = before $0 "\n\n~~~~~~" }
-					END { print before, after }
-				' "$logfile" > tmpfile2
 
-				cat tmpfile2 <<< "$edited_entries" > tmpfile3
+						# Check if the date matches and set the flag accordingly
+						$0 ~ date {
+							found = 1
+							print_before = (position == "before") ? 1 : 0
+							print_after = (position == "after") ? 1 : 0
+							next
+						}
 
-				mv tmpfile3 "$logfile"
+						# If the date is not found yet and flags are set, print the current entry
+						(!found && print_before) {
+							print $0 "\n\n~~~~~~\n"
+						}
+
+						# if the date has been found, and we are printing "after"
+						# add a delimiter before each entry
+						found && print_after {
+							if (NR != 1) {
+								print "\n\n~~~~~~\n"
+							}
+							print $0 "\n\n~~~~~~\n"
+						}
+					' "$logfile"
+				}
+				
+				# Extract entries before the edit date and append them to tmpfile2
+				extract_entries "$editdate" "before" > tmpfile2
+				extract_entries "$editdate" "before" > before.txt
+				
+
+				# Append the edited entries to tmpfile2
+				echo "$edited_entries" >> tmpfile2
+
+				# Extract entries after the edit date and append them to tmpfile2
+				#extract_entries "$editdate" | grep -A1 -e "$editdate" | tail +2 >> tmpfile2
+				extract_entries "$editdate" "after" >> tmpfile2
+				extract_entries "$editdate" "after" > after.txt
+
+				# Moves tmpfile2 back to the log file, overwriting it
+				mv tmpfile2 "$logfile"
 
 				echo "Changes saved."
 
@@ -361,7 +392,7 @@ then
 			fi
 			
 		# Remove the temporary file
-		rm tmpfile tmpfile2
+		rm tmpfile
 	else
 		# If there are no entries found for the provided date, display a message		
 		echo "No entries found for the provided date. Check if you have used the correct date format."
