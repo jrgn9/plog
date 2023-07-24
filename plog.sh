@@ -340,16 +340,15 @@ then
 				# Function to extract entries from the log file based on the edit date
 				extract_entries() {
 					awk -v RS="\n\n~~~~~~\n" -v date="$1" -v position="$2" '
-						BEGIN { 
-							print_before = 1; print_after = 0; found = 0; 
-							printed_before = 0; printed_after = 0 
+						BEGIN {
+							print_before = (position == "before") ? 1 : 0
+							print_after = (position == "after") ? 1 : 0
+							found = 0
 						}
 
 						# Check if the date matches and set the flag accordingly
 						$0 ~ date {
 							found = 1
-							print_before = (position == "before") ? 1 : 0
-							print_after = (position == "after") ? 1 : 0
 							next
 						}
 
