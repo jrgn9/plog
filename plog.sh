@@ -346,6 +346,24 @@ then
 							found = 0
 						}
 
+						# Function to print entries before the specified date
+						function print_before_entries() {
+							if (before_printed && NR != 1) {
+								print "\n\n~~~~~~\n"		
+							}
+							before_printed = 1	
+							print $0 "\n\n~~~~~~\n"
+						}
+
+						# Function to print entries after the specified date
+						function print_after_entries() {
+							if (after_printed && NR != 1) {
+								print "\n\n~~~~~~\n"	
+							}
+							after_printed = 1
+							print $0 "\n\n~~~~~~\n"	
+						}
+
 						# Check if the date matches and set the flag accordingly
 						$0 ~ date {
 							found = 1
@@ -354,16 +372,14 @@ then
 
 						# If the date is not found yet and flags are set, print the current entry
 						(!found && print_before) {
-							print $0 "\n\n~~~~~~\n"
+							print_before_entries()
 						}
 
 						# if the date has been found, and we are printing "after"
 						# add a delimiter before each entry
-						found && print_after {
-							if (NR != 1) {
-								print "\n\n~~~~~~\n"
-							}
-							print $0 "\n\n~~~~~~\n"
+						found && print_after && !printed_after {
+							print_after_entries()
+							printed_after = 1
 						}
 					' "$logfile"
 				}
