@@ -292,41 +292,31 @@ then
 				print_after = (position == "after") ? 1 : 0
 			}
 
-			# Function to print entries before the specified cutoff
-			function print_before_entries() {
-				before_printed = 1	
+			# Function to print entries
+			function print_entries() {
 				print $0 "\n\n~~~~~~"
 			}
 
-			# Function to print entries after the specified cutoff
-			function print_after_entries() {
-				after_printed = 1
-				if (last_entry != "") {
-					print $0
-				}
-				else {
-					print $0 "\n\n~~~~~~"
-				}
-			}
-
-			# Check if the date matches and set the flag accordingly
+			# Check if the cutoff matches and set the flag accordingly
 			($0 ~ cutoff) || (NR == cutoff) {
 				found = 1
-				before_printed = 0
-				after_printed = 0
+				# Adjust cutoff to match the first entry after the specified ID
+				if (position == "after") {
+					cutoff = NR - 1
+				}
 				next
 			}
-
-			# If the cutoff is not found yet and flags are set, print the current entry
+			
+			# If the cutoff is not found yet and we are printing before cutoff 
+			# print the current entry
 			(!found && print_before) {
-				print_before_entries()
+				print_entries()
 			}
 
-			# if the cutoff has been found, and we are printing "after" 
-			# add a delimiter before each entry
+			# if the cutoff has been found, and we are printing "after" the cutoff
+			# print the current entry
 			found && print_after {
-				print_after_entries()
-				printed_after = 1
+				print_entries()
 			}
 		' "$logfile"
 	}
@@ -387,11 +377,13 @@ then
 
 	else
 		# No arguments
+		
+		### Should i bother error handling???
 
 		# Opens the log file with the default editor
 		"$text_editor" "$logfile"
 
-		# Check if there was any changes and print message accordingly
+		### Check if there was any changes and print message accordingly
 
 		exit 0
 	fi
