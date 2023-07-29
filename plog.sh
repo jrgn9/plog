@@ -284,7 +284,7 @@ then
 		sleep 3
 	fi
 
-	# Function to extract entries from the log file based on the edit date
+	# Function to extract entries from the log file based on a cutoff (date/ID) and position
 	extract_entries() {
 		awk -v RS="\n\n~~~~~~\n" -v cutoff="$1" -v position="$2" '
 			BEGIN {
@@ -292,13 +292,13 @@ then
 				print_after = (position == "after") ? 1 : 0
 			}
 
-			# Function to print entries before the specified date
+			# Function to print entries before the specified cutoff
 			function print_before_entries() {
 				before_printed = 1	
 				print $0 "\n\n~~~~~~"
 			}
 
-			# Function to print entries after the specified date
+			# Function to print entries after the specified cutoff
 			function print_after_entries() {
 				after_printed = 1
 				if (last_entry != "") {
@@ -317,12 +317,12 @@ then
 				next
 			}
 
-			# If the date is not found yet and flags are set, print the current entry
+			# If the cutoff is not found yet and flags are set, print the current entry
 			(!found && print_before) {
 				print_before_entries()
 			}
 
-			# if the date has been found, and we are printing "after" 
+			# if the cutoff has been found, and we are printing "after" 
 			# add a delimiter before each entry
 			found && print_after {
 				print_after_entries()
@@ -345,88 +345,45 @@ then
 			# No third argument, prompts user for date
 			echo "Edit by date"
 			read -p "Enter date in format YYYY-MM-DD: " editdate
-		fi	
-		
+		fi
 		# Awk sentence that redirects all matching dates to a tempfile
         	awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
 		# Store the original content in a variable before editing
 		original_entries=$(awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile")
 
-		# If there is content in the tempfile, open it in the editor
-        	if [ -s "tmpfile" ]
-       		then
-			# Open temp file with matching entries in default text editor
-			"$text_editor" "tmpfile"
-            
-			# Get the edited entries from the tmp file and adds in the delimiter
-			#edited_entries=$(awk -v RS="\n\n~~~~~~\n" '{print $0 "\n\n~~~~~~"}' "tmpfile")
-			edited_entries=$(cat "tmpfile")
-
-			# Checks number of entries before and after editing
-			num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
-			num_entries_after=$(echo "$edited_entries" | grep -o "~~~~~~" | wc -l)
-			
-			# Error handling in case user has edited dates or number of entries
-			if [ "$num_entries_before" != "$num_entries_after" ]
-			then
-				echo "Warning: The number of log entries has been modified. This might be due to editing seperators or the format."
-				echo "Before editing: $num_entries_before entries"
-				echo "After editing: $num_entries_after entries"
-				read -p "Are you sure you want to save your changes? (y/n): " error_answer
-				edit_error=1
-			fi
-
-			# MIGHT ADD ERROR HANDLING FOR EDITING DATES AND ENTRY NUMBERS
-			# SEE GIT COMMIT ab9489e69a12df3f16f38989b03b129f37aa5ef9
-
-			# Continues to overwrite changes if there are no errors 
-			# or the user wants to continue anyways
-			if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
-			then
-
-
-				
-				# Extract entries before the edit date and append them to tmpfile2
-				extract_entries "$editdate" "before" > tmpfile2
-
-				# Append the edited entries to tmpfile2
-				echo "$edited_entries" >> tmpfile2
-
-				# Extract entries after the edit date and append them to tmpfile2
-				#extract_entries "$editdate" | grep -A1 -e "$editdate" | tail +2 >> tmpfile2
-				extract_entries "$editdate" "after" >> tmpfile2
-
-				# Moves tmpfile2 back to the log file, overwriting it
-				mv tmpfile2 "$logfile"
-
-				echo "Changes saved."
-
-			else
-				echo "No changes were saved."
-			fi
-			
-		# Remove the temporary file
-		rm tmpfile
-	else
-		# If there are no entries found for the provided date, display a message		
-		echo "No entries found for the provided date. Check if you have used the correct date format."
-		rm tmpfile
-		exit 1
-	fi
-	
-	exit 0
-	
-	elif [ "$2" = "id" -o "$2" = "ID" ]
+	elif [ "$2" = "id"  -o "$2" = "ID" ]
 	then
 		# Edit by id argument
-		echo "Edit by id"
-		exit 0
+
+		# Checks if there is an id provided as argument
+		if [ -n "$3" ]
+		then
+			# Sets editid to be third argument
+			editid=$(($3 + 1)) # Adjust ID to match array index
+		else
+			# No third argument, prompts user for id
+			echo "Edit by id"
+			read -p "Enter entry number id " editid
+
+			# Subtract 1 from editid to match array index
+			editid=$(($editid + 1))
+		fi
+		# Awk sentence that redirects all matching ids to a tempfile
+        	awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+		# Store the original content in a variable before editing
+		original_entries=$(awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile")
 
 	elif [ "$2" = "last" ]
 	then
 		# Edit last entry
 		echo "Edit last entry"
 		exit 0
+
+		# Awk sentence that redirects the last entry to a tempfile
+    		awk -v RS="\n\n~~~~~~\n" 'END { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+
+    		# Store the original content in a variable before editing
+    		original_entries=$(awk -v RS="\n\n~~~~~~\n" 'END { print $0 "\n\n~~~~~~" }' "$logfile")
 
 	else
 		# No arguments
@@ -438,6 +395,81 @@ then
 
 		exit 0
 	fi
+
+	# If there is content in the tempfile from date, id or last, open it in the editor
+	if [ -s "tmpfile" ]
+	then
+		# Open temp file with matching entries in default text editor
+		"$text_editor" "tmpfile"
+    
+		# Get the edited entries from the tmp file and adds in the delimiter
+		edited_entries=$(cat "tmpfile")
+
+		# Checks number of entries before and after editing
+		num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
+		num_entries_after=$(echo "$edited_entries" | grep -o "~~~~~~" | wc -l)
+		
+		# Error handling in case user has edited dates or number of entries
+		if [ "$num_entries_before" != "$num_entries_after" ]
+		then
+			echo "Warning: The number of log entries has been modified." 
+			echo "This might be due to editing seperators or the format."
+			echo "Before editing: $num_entries_before entries"
+			echo "After editing: $num_entries_after entries"
+			read -p "Are you sure you want to save your changes? (y/n): " error_answer
+			edit_error=1
+		fi
+
+		# MIGHT ADD ERROR HANDLING FOR EDITING DATES AND ENTRY NUMBERS
+		# SEE GIT COMMIT ab9489e69a12df3f16f38989b03b129f37aa5ef9
+
+		# Continues to overwrite changes if there are no errors 
+		# or the user wants to continue anyways
+		if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
+		then
+			if [ -n "$editdate" ]
+			then
+				# Extract entries before the edit date and append them to tmpfile2
+				extract_entries "$editdate" "before" > tmpfile2
+
+				# Append the edited entries to tmpfile2
+				echo "$edited_entries" >> tmpfile2
+
+				# Extract entries after the edit date and append them to tmpfile2
+				extract_entries "$editdate" "after" >> tmpfile2
+			
+			elif [ -n "$editid" ]
+			then
+				# Extract entries before the entry id and append them to tmpfile2
+				extract_entries "$editid" "before" > tmpfile2
+
+				# Append the edited entries to tmpfile2
+				echo "$edited_entries" >> tmpfile2
+
+				# Extract entries after the entry id and append them to tmpfile2
+				extract_entries "$editid" "after" >> tmpfile2
+			fi
+
+			# Moves tmpfile2 back to the log file, overwriting it
+			mv tmpfile2 "$logfile"
+
+			echo "Changes saved."
+
+		else
+			echo "No changes were saved."
+		fi
+		
+	# Remove the temporary file
+	rm tmpfile
+else
+	# If there are no entries found for the provided date, display a message		
+	echo "No entries found for the provided search parameter. Check if you have used the correct date format or id number."
+	rm tmpfile
+	exit 1
+fi
+
+exit 0
+
 
 # PRINT FLAG
 elif [ "$1" = "--print" -o "$1" = "-p" ]
