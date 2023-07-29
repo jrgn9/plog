@@ -283,7 +283,54 @@ then
 		echo "This can have unintended consequences! (this warning can be turned off in settings)"
 		sleep 3
 	fi
-	
+
+	# Function to extract entries from the log file based on the edit date
+	extract_entries() {
+		awk -v RS="\n\n~~~~~~\n" -v cutoff="$1" -v position="$2" '
+			BEGIN {
+				print_before = (position == "before") ? 1 : 0
+				print_after = (position == "after") ? 1 : 0
+			}
+
+			# Function to print entries before the specified date
+			function print_before_entries() {
+				before_printed = 1	
+				print $0 "\n\n~~~~~~"
+			}
+
+			# Function to print entries after the specified date
+			function print_after_entries() {
+				after_printed = 1
+				if (last_entry != "") {
+					print $0
+				}
+				else {
+					print $0 "\n\n~~~~~~"
+				}
+			}
+
+			# Check if the date matches and set the flag accordingly
+			($0 ~ cutoff) || (NR == cutoff) {
+				found = 1
+				before_printed = 0
+				after_printed = 0
+				next
+			}
+
+			# If the date is not found yet and flags are set, print the current entry
+			(!found && print_before) {
+				print_before_entries()
+			}
+
+			# if the date has been found, and we are printing "after" 
+			# add a delimiter before each entry
+			found && print_after {
+				print_after_entries()
+				printed_after = 1
+			}
+		' "$logfile"
+	}
+
 	# Edit arguments
 	if [ "$2" = "date" ]
 	then
@@ -337,59 +384,7 @@ then
 			if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
 			then
 
-				# Function to extract entries from the log file based on the edit date
-				extract_entries() {
-					awk -v RS="\n\n~~~~~~\n" -v date="$1" -v position="$2" '
-						BEGIN {
-							print_before = (position == "before") ? 1 : 0
-							print_after = (position == "after") ? 1 : 0
-						}
 
-						# Function to print entries before the specified date
-						function print_before_entries() {
-							before_printed = 1	
-							print $0 "\n\n~~~~~~"
-						}
-
-						# Function to print entries after the specified date
-						function print_after_entries() {
-							after_printed = 1
-							if (last_entry != "") {
-								print $0
-							}
-							else {
-								print $0 "\n\n~~~~~~"
-							}
-						}
-
-						# Check if the date matches and set the flag accordingly
-						$0 ~ date {
-							found = 1
-							before_printed = 0
-							after_printed = 0
-							next
-						}
-
-						# If the date is not found yet and flags are set, print the current entry
-						(!found && print_before) {
-							print_before_entries()
-						}
-
-						# if the date has been found, and we are printing "after"
-						# add a delimiter before each entry
-						found && print_after {
-							print_after_entries()
-							printed_after = 1
-						}
-
-						# Skip printing the final delimiter at the end of the file
-						END {
-							if (found && print_after && !after_printed) {
-								print_after_entries()
-							}
-						}
-					' "$logfile"
-				}
 				
 				# Extract entries before the edit date and append them to tmpfile2
 				extract_entries "$editdate" "before" > tmpfile2
