@@ -343,30 +343,30 @@ then
 						BEGIN {
 							print_before = (position == "before") ? 1 : 0
 							print_after = (position == "after") ? 1 : 0
-							found = 0
 						}
 
 						# Function to print entries before the specified date
 						function print_before_entries() {
-							if (before_printed && NR != 1) {
-								print "\n\n~~~~~~\n"		
-							}
 							before_printed = 1	
-							print $0 "\n\n~~~~~~\n"
+							print $0 "\n\n~~~~~~"
 						}
 
 						# Function to print entries after the specified date
 						function print_after_entries() {
-							if (after_printed && NR != 1) {
-								print "\n\n~~~~~~\n"	
-							}
 							after_printed = 1
-							print $0 "\n\n~~~~~~\n"	
+							if (last_entry != "") {
+								print $0
+							}
+							else {
+								print $0 "\n\n~~~~~~"
+							}
 						}
 
 						# Check if the date matches and set the flag accordingly
 						$0 ~ date {
 							found = 1
+							before_printed = 0
+							after_printed = 0
 							next
 						}
 
@@ -377,17 +377,22 @@ then
 
 						# if the date has been found, and we are printing "after"
 						# add a delimiter before each entry
-						found && print_after && !printed_after {
+						found && print_after {
 							print_after_entries()
 							printed_after = 1
+						}
+
+						# Skip printing the final delimiter at the end of the file
+						END {
+							if (found && print_after && !after_printed) {
+								print_after_entries()
+							}
 						}
 					' "$logfile"
 				}
 				
 				# Extract entries before the edit date and append them to tmpfile2
 				extract_entries "$editdate" "before" > tmpfile2
-				extract_entries "$editdate" "before" > before.txt
-				
 
 				# Append the edited entries to tmpfile2
 				echo "$edited_entries" >> tmpfile2
@@ -395,7 +400,6 @@ then
 				# Extract entries after the edit date and append them to tmpfile2
 				#extract_entries "$editdate" | grep -A1 -e "$editdate" | tail +2 >> tmpfile2
 				extract_entries "$editdate" "after" >> tmpfile2
-				extract_entries "$editdate" "after" > after.txt
 
 				# Moves tmpfile2 back to the log file, overwriting it
 				mv tmpfile2 "$logfile"
