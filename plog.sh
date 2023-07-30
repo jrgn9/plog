@@ -286,10 +286,13 @@ then
 
 	# Function to extract entries from the log file based on a cutoff (date/ID) and position
 	extract_entries() {
-		awk -v RS="\n\n~~~~~~\n" -v cutoff="$1" -v position="$2" '
+		awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
 			BEGIN {
+				# If sentences to check position and type of cutoff
 				print_before = (position == "before") ? 1 : 0
 				print_after = (position == "after") ? 1 : 0
+				print_between = (position == "between") ? 1 : 0
+				is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
 			}
 
 			# Function to print entries
@@ -298,11 +301,15 @@ then
 			}
 
 			# Check if the cutoff matches and set the flag accordingly
-			($0 ~ cutoff) || (NR == cutoff) {
+			if ((is_id && NR >= cutoff_start && NR <= cutoff_end) ||
+				(!is_id && $0 ~ cutoff_start && $0 ~ cutoff_end)) {
 				found = 1
 				# Adjust cutoff to match the first entry after the specified ID
-				if (position == "after") {
-					cutoff = NR - 1
+				# if (position == "after") {
+				#	cutoff = NR - 1
+				#}
+				if (print_between) {
+					print_entries()
 				}
 				next
 			}
@@ -330,16 +337,32 @@ then
 		if [ -n "$3" ]
 		then
 			# Sets editdate to be third argument
-			editdate="$3"
+			editdate_start="$3"
+			if [ -n "$4" ]
+			then
+				# Sets editdate to be third argument
+				editdate_end="$4"
+			else
+				editdate_end="$editdate_start"
+			fi
 		else
 			# No third argument, prompts user for date
 			echo "Edit by date"
-			read -p "Enter date in format YYYY-MM-DD: " editdate
+			echo "Enter one date or two dates seperated by space for a date range (optional) "
+			read -p "Enter date in format YYYY-MM-DD: " editdate_start editdate_end
+
+			if [ -z "$editdate_end" ]
+			then
+				$editdate_end="$editdate_start"
+			fi
 		fi
 		# Awk sentence that redirects all matching dates to a tempfile
-        	awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+        	#awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+		extract_entries "$editdate_start" "$editdate_end" "between" > tmpfile
+		
 		# Store the original content in a variable before editing
-		original_entries=$(awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile")
+		original_entries=$(extract_entries "$editdate_start" "$editdate_end" "between")
+		#(awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile")
 
 	elif [ "$2" = "id"  -o "$2" = "ID" ]
 	then
@@ -419,16 +442,16 @@ then
 		# or the user wants to continue anyways
 		if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
 		then
-			if [ -n "$editdate" ]
+			if [ -n "$editdate_start" ]
 			then
 				# Extract entries before the edit date and append them to tmpfile2
-				extract_entries "$editdate" "before" > tmpfile2
+				extract_entries "$editdate_start" "$editdate_end" "before" > tmpfile2
 
 				# Append the edited entries to tmpfile2
 				echo "$edited_entries" >> tmpfile2
 
 				# Extract entries after the edit date and append them to tmpfile2
-				extract_entries "$editdate" "after" >> tmpfile2
+				extract_entries "$editdate_start" "$editdate_end" "after" >> tmpfile2
 			
 			elif [ -n "$editid" ]
 			then
