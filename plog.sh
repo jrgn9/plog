@@ -301,13 +301,20 @@ then
 			}
 
 			# Check if the cutoff matches and set the flag accordingly
-			if ((is_id && NR >= cutoff_start && NR <= cutoff_end) ||
-				(!is_id && $0 ~ cutoff_start && $0 ~ cutoff_end)) {
+			if (!is_id && ($0 ~ cutoff_start) && ($0 ~ cutoff_end)) {
 				found = 1
 				# Adjust cutoff to match the first entry after the specified ID
 				# if (position == "after") {
 				#	cutoff = NR - 1
 				#}
+				if (print_between) {
+					print_entries()
+				}
+				next
+			}
+
+			if (is_id && (NR >= cutoff_start) && (NR <= cutoff_end)) {
+				found = 1
 				if (print_between) {
 					print_entries()
 				}
@@ -353,7 +360,7 @@ then
 
 			if [ -z "$editdate_end" ]
 			then
-				$editdate_end="$editdate_start"
+				editdate_end="$editdate_start"
 			fi
 		fi
 		# Awk sentence that redirects all matching dates to a tempfile
@@ -372,25 +379,42 @@ then
 		if [ -n "$3" ]
 		then
 			# Sets editid to be third argument
-			editid=$(($3 + 1)) # Adjust ID to match array index
+			editid_start=$(($3 + 1)) # Adjust ID to match array index
+
+			if [ -n "$4" ]
+			then
+				editid_end="$4"
+			else
+				editid_end="$editid_start"
+			fi
+
 		else
 			# No third argument, prompts user for id
 			echo "Edit by id"
-			read -p "Enter entry number id " editid
+			echo "Enter one entry number or two numbers seperated by space for id range (optional)"
+			read -p "Enter entry number id " editid_start editid_end
 
 			# Subtract 1 from editid to match array index
-			editid=$(($editid + 1))
+			editid_start=$(($editid + 1))
+
+			if [ -z "$editid_end" ]
+			then
+				editid_end="$editid_start"
+			fi
 		fi
+
 		# Awk sentence that redirects all matching ids to a tempfile
-        	awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+        	#awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+		extract_entries "$editid_start" "$editid_end" "between" > tmpfile
+
 		# Store the original content in a variable before editing
-		original_entries=$(awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile")
+		original_entries=$(extract_entries "$editid_start" "$editid_end" "between")
+		#$(awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile")
 
 	elif [ "$2" = "last" ]
 	then
 		# Edit last entry
 		echo "Edit last entry"
-		exit 0
 
 		# Awk sentence that redirects the last entry to a tempfile
     		awk -v RS="\n\n~~~~~~\n" 'END { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
@@ -453,16 +477,22 @@ then
 				# Extract entries after the edit date and append them to tmpfile2
 				extract_entries "$editdate_start" "$editdate_end" "after" >> tmpfile2
 			
-			elif [ -n "$editid" ]
+			elif [ -n "$editid_start" ]
 			then
 				# Extract entries before the entry id and append them to tmpfile2
-				extract_entries "$editid" "before" > tmpfile2
+				extract_entries "$editid_start" "$editid_end" "before" > tmpfile2
 
 				# Append the edited entries to tmpfile2
 				echo "$edited_entries" >> tmpfile2
 
 				# Extract entries after the entry id and append them to tmpfile2
-				extract_entries "$editid" "after" >> tmpfile2
+				extract_entries "$editid_start" "$editid_end" "after" >> tmpfile2
+
+			else
+				# Edit last entry, since there are no editid or editdate
+
+				# Add the edited entries to tmpfile2
+				echo "$edited_entries" > tmpfile2
 			fi
 
 			# Moves tmpfile2 back to the log file, overwriting it
