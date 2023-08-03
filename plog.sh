@@ -293,6 +293,9 @@ then
 				print_after = (position == "after") ? 1 : 0
 				print_between = (position == "between") ? 1 : 0
 				is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
+
+				# Debug output
+				print "is_id:", is_id, "cutoff_start:", cutoff_start, "cutoff_end:", cutoff_end
 			}
 
 			# Function to print entries
@@ -301,26 +304,15 @@ then
 			}
 
 			# Check if the cutoff matches and set the flag accordingly
-			if (!is_id && ($0 ~ cutoff_start) && ($0 ~ cutoff_end)) {
+			if ((is_id && (NR >= cutoff_start) && (NR <= cutoff_end)) || (!is_id && ($0 ~ cutoff_start) && ($0 ~ cutoff_end))) {
+				print "Found in date range:", $0
 				found = 1
-				# Adjust cutoff to match the first entry after the specified ID
-				# if (position == "after") {
-				#	cutoff = NR - 1
-				#}
 				if (print_between) {
 					print_entries()
 				}
 				next
 			}
 
-			if (is_id && (NR >= cutoff_start) && (NR <= cutoff_end)) {
-				found = 1
-				if (print_between) {
-					print_entries()
-				}
-				next
-			}
-			
 			# If the cutoff is not found yet and we are printing before cutoff 
 			# print the current entry
 			(!found && print_before) {
@@ -395,7 +387,7 @@ then
 			read -p "Enter entry number id " editid_start editid_end
 
 			# Subtract 1 from editid to match array index
-			editid_start=$(($editid + 1))
+			editid_start=$(($editid_start + 1))
 
 			if [ -z "$editid_end" ]
 			then
@@ -409,7 +401,7 @@ then
 
 		# Store the original content in a variable before editing
 		original_entries=$(extract_entries "$editid_start" "$editid_end" "between")
-		#$(awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile")
+		#original_entries=$(awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile")
 
 	elif [ "$2" = "last" ]
 	then
