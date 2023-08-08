@@ -293,9 +293,6 @@ then
 				print_after = (position == "after") ? 1 : 0
 				print_between = (position == "between") ? 1 : 0
 				is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
-
-				# Debug output
-				print "is_id:", is_id, "cutoff_start:", cutoff_start, "cutoff_end:", cutoff_end
 			}
 
 			# Function to print entries
@@ -304,9 +301,11 @@ then
 			}
 
 			# Check if the cutoff matches and set the flag accordingly
-			match_cutoff = (is_id && NR >= cutoff_start && NR <= cutoff_end) || (!is_id && ($0 ~ cutoff_start && $0 ~ cutoff_end))
+			is_id_match = (is_id && NR >= cutoff_start && NR <= cutoff_end)
+			#is_date_match = (!is_id && ($0 >= cutoff_start && $0 <= cutoff_end))
+			is_date_match = (!is_id && split($0, lines, "\n") && lines[2] >= cutoff_start && lines[2] <= cutoff_end)
 
-			match_cutoff {
+			is_id_match || is_date_match {
 				found = 1
 				if (print_between) {
 					print_entries()
@@ -357,12 +356,10 @@ then
 			fi
 		fi
 		# Awk sentence that redirects all matching dates to a tempfile
-        #awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
 		extract_entries "$editdate_start" "$editdate_end" "between" > tmpfile
 		
 		# Store the original content in a variable before editing
 		original_entries=$(extract_entries "$editdate_start" "$editdate_end" "between")
-		#(awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile")
 
 	elif [ "$2" = "id"  -o "$2" = "ID" ]
 	then
@@ -373,12 +370,15 @@ then
 		then
 			# Sets editid to be third argument
 			editid_start=$(($3 + 1)) # Adjust ID to match array index
+			#editid_start="$3"
 
 			if [ -n "$4" ]
 			then
-				editid_end="$4"
+				editid_end=$(($4 + 1)) # Adjust ID to match array index + 1"
 			else
 				editid_end="$editid_start"
+				#editid_end=$(($editid_start + 1))
+
 			fi
 
 		else
@@ -387,8 +387,9 @@ then
 			echo "Enter one entry number or two numbers seperated by space for id range (optional)"
 			read -p "Enter entry number id " editid_start editid_end
 
-			# Subtract 1 from editid to match array index
+			# Add 1 to editid to match array index with entry ids
 			editid_start=$(($editid_start + 1))
+			editid_end=$(($editid_end + 1))
 
 			if [ -z "$editid_end" ]
 			then
@@ -397,12 +398,10 @@ then
 		fi
 
 		# Awk sentence that redirects all matching ids to a tempfile
-        #awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
 		extract_entries "$editid_start" "$editid_end" "between" > tmpfile
 
 		# Store the original content in a variable before editing
 		original_entries=$(extract_entries "$editid_start" "$editid_end" "between")
-		#original_entries=$(awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile")
 
 	elif [ "$2" = "last" ]
 	then
@@ -440,6 +439,8 @@ then
 		# Checks number of entries before and after editing
 		num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
 		num_entries_after=$(echo "$edited_entries" | grep -o "~~~~~~" | wc -l)
+		# FOR DEBUGGING:
+		echo "entries before: $num_entries_before entries after: $num_entries_after"
 		
 		# Error handling in case user has edited dates or number of entries
 		if [ "$num_entries_before" != "$num_entries_after" ]
