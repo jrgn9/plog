@@ -288,41 +288,35 @@ then
 	extract_entries() {
 		awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
 			BEGIN {
-				# If sentences to check position and type of cutoff
-				print_before = (position == "before") ? 1 : 0
-				print_after = (position == "after") ? 1 : 0
-				print_between = (position == "between") ? 1 : 0
+				# If sentences to check if cutoff is date or id and sets it to 0 or 1
 				is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
 			}
 
-			# Function to print entries
+			# Function to print the current entry followed by delimiter
 			function print_entries() {
 				print $0 "\n\n~~~~~~"
 			}
 
-			# Check if the cutoff matches and set the flag accordingly
-			is_id_match = (is_id && NR >= cutoff_start && NR <= cutoff_end)
-			#is_date_match = (!is_id && ($0 >= cutoff_start && $0 <= cutoff_end))
-			is_date_match = (!is_id && split($0, lines, "\n") && lines[2] >= cutoff_start && lines[2] <= cutoff_end)
+			{
+				# If cutoff is id, check if current record (NR) falls between the id range (true/false)
+				if (is_id) {
+					match_id = (NR >= cutoff_start && NR <= cutoff_end)
+				}
 
-			is_id_match || is_date_match {
-				found = 1
-				if (print_between) {
+				# If the cutoff is date, check if current record contains either of the dates (true/false)
+				else {
+					match_date = ($0 ~ cutoff_start || $0 ~ cutoff_end)
+				}
+
+				# Determine which entries to print based on the position argument:
+				# before: print all entries before cutoff,
+				# after: print all entries after cutoff,
+				# between: print all entries between cutoffs (inclusive)
+				if ((position == "before" && (is_id && NR < cutoff_start || !is_id && !match_date)) ||
+				(position == "after" && (is_id && NR > cutoff_end || !is_id && match_date)) ||
+				(position == "between" && (is_id && match_id || !is_id && match_date))) {
 					print_entries()
 				}
-				next
-			}
-
-			# If the cutoff is not found yet and we are printing before cutoff 
-			# print the current entry
-			(!found && print_before) {
-				print_entries()
-			}
-
-			# if the cutoff has been found, and we are printing "after" the cutoff
-			# print the current entry
-			found && print_after {
-				print_entries()
 			}
 		' "$logfile"
 	}
