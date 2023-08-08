@@ -304,8 +304,9 @@ then
 			}
 
 			# Check if the cutoff matches and set the flag accordingly
-			if ((is_id && (NR >= cutoff_start) && (NR <= cutoff_end)) || (!is_id && ($0 ~ cutoff_start) && ($0 ~ cutoff_end))) {
-				print "Found in date range:", $0
+			match_cutoff = (is_id && NR >= cutoff_start && NR <= cutoff_end) || (!is_id && ($0 ~ cutoff_start && $0 ~ cutoff_end))
+
+			match_cutoff {
 				found = 1
 				if (print_between) {
 					print_entries()
@@ -356,7 +357,7 @@ then
 			fi
 		fi
 		# Awk sentence that redirects all matching dates to a tempfile
-        	#awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+        #awk -v RS="\n\n~~~~~~\n" -v date="$editdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
 		extract_entries "$editdate_start" "$editdate_end" "between" > tmpfile
 		
 		# Store the original content in a variable before editing
@@ -396,7 +397,7 @@ then
 		fi
 
 		# Awk sentence that redirects all matching ids to a tempfile
-        	#awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+        #awk -v RS="\n\n~~~~~~\n" -v id="$editid" 'id == NR { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
 		extract_entries "$editid_start" "$editid_end" "between" > tmpfile
 
 		# Store the original content in a variable before editing
