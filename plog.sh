@@ -288,8 +288,14 @@ then
 	extract_entries() {
 		awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
 			BEGIN {
-				# If sentences to check if cutoff is date or id and sets it to 0 or 1
+				# If sentence to check if cutoff is date or id and sets it to 0 or 1
 				is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
+
+				# Variable for flagging the first entry of cutoff_end
+				start_passed = 0
+				end_passed = 0
+				match_start_passed = 0
+				match_end_passed = 0
 			}
 
 			# Function to print the current entry followed by delimiter
@@ -298,23 +304,52 @@ then
 			}
 
 			{
-				# If cutoff is id, check if current record (NR) falls between the id range (true/false)
+				# If cutoff is id set start and end to current record number equals cutoff start/end
 				if (is_id) {
-					match_id = (NR >= cutoff_start && NR <= cutoff_end)
+					match_id_start = (NR == cutoff_start)
+					match_id_end = (NR == cutoff_end)
 				}
-
-				# If the cutoff is date, check if current record contains either of the dates (true/false)
+				# If cutoff is date set start and end to match the date of the record
 				else {
-					match_date = ($0 ~ cutoff_start || $0 ~ cutoff_end)
+					# Comment out for testing later
+					# match_date_start = (NR % 3 == 2 && $0 ~ cutoff_start)
+					# match_date_end = (NR % 3 == 2 && $0 ~ cutoff_end)
+					match_date_start = ($0 ~ cutoff_start)
+					match_date_end = ($0 ~ cutoff_end)
+				}
+				
+				# Checks if we passed the first match_start entry
+				if (match_id_start || match_date_start) {
+					start_passed = 1
 				}
 
-				# Determine which entries to print based on the position argument:
-				# before: print all entries before cutoff,
-				# after: print all entries after cutoff,
-				# between: print all entries between cutoffs (inclusive)
-				if ((position == "before" && (is_id && NR < cutoff_start || !is_id && !match_date)) ||
-				(position == "after" && (is_id && NR > cutoff_end || !is_id && match_date)) ||
-				(position == "between" && (is_id && match_id || !is_id && match_date))) {
+				# Checks if we passed all the match_start entries
+				if (start_passed && (!match_id_start || !match_date_start)) {
+					match_start_passed = 1
+				}
+
+				# If the position is before and the state is at the start print current entry
+				if (position == "before" && !match_id_start && !match_date_start && !match_start_passed) {
+					print_entries()
+				}
+
+				# If the position is between and we are passed match_start and until all of match_end, print current entry
+				else if (position == "between" && (match_id_start || match_date_start || (end_passed && (match_id_end || match_date_end)))) {
+					print_entries()
+				}
+
+				# Checks if we have reached the first entry of the cutoff_end
+				if (match_id_end || match_date_end) {
+					end_passed = 1
+				}
+				
+				# Checks if we passed all match_end entries
+				if (end_passed && !match_id_end && !match_date_end) {
+					match_end_passed = 1
+				}
+
+				# If position is after and we are passed the end match_end, print current entry
+				if (position == "after" && match_end_passed) {
 					print_entries()
 				}
 			}
@@ -458,23 +493,35 @@ then
 			then
 				# Extract entries before the edit date and append them to tmpfile2
 				extract_entries "$editdate_start" "$editdate_end" "before" > tmpfile2
+				#DEBUG_
+				extract_entries "$editdate_start" "$editdate_end" "before" > before.txt
 
 				# Append the edited entries to tmpfile2
 				echo "$edited_entries" >> tmpfile2
+				# DEBUG:
+				echo "$edited_entries" > between.txt
 
 				# Extract entries after the edit date and append them to tmpfile2
 				extract_entries "$editdate_start" "$editdate_end" "after" >> tmpfile2
+				# DEBUG:
+				extract_entries "$editdate_start" "$editdate_end" "after" > after.txt
 			
 			elif [ -n "$editid_start" ]
 			then
 				# Extract entries before the entry id and append them to tmpfile2
 				extract_entries "$editid_start" "$editid_end" "before" > tmpfile2
+				# DEBUG:
+				extract_entries "$editid_start" "$editid_end" "before" > beforeid.txt
 
 				# Append the edited entries to tmpfile2
 				echo "$edited_entries" >> tmpfile2
+				# DEBUG:
+				echo "$edited_entries" > betweenid.txt
 
 				# Extract entries after the entry id and append them to tmpfile2
 				extract_entries "$editid_start" "$editid_end" "after" >> tmpfile2
+				# DEBUG:
+				extract_entries "$editid_start" "$editid_end" "after" > afterid.txt
 
 			else
 				# Edit last entry, since there are no editid or editdate
