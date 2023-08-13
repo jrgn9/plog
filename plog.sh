@@ -409,15 +409,13 @@ then
 		if [ -n "$3" ]
 		then
 			# Sets editid to be third argument
-			editid_start=$(($3 + 1)) # Adjust ID to match array index
-			#editid_start="$3"
+			editid_start="$3"
 
 			if [ -n "$4" ]
 			then
-				editid_end=$(($4 + 1)) # Adjust ID to match array index + 1"
+				editid_end="$4"
 			else
 				editid_end="$editid_start"
-				#editid_end=$(($editid_start + 1))
 
 			fi
 
@@ -428,8 +426,8 @@ then
 			read -p "Enter entry number id " editid_start editid_end
 
 			# Add 1 to editid to match array index with entry ids
-			editid_start=$(($editid_start + 1))
-			editid_end=$(($editid_end + 1))
+			editid_start=$(($editid_start))
+			editid_end=$(($editid_end))
 
 			if [ -z "$editid_end" ]
 			then
