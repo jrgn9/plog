@@ -305,26 +305,27 @@ then
 
 			{
 				# Extract the actual ID from the entry number in log entry
-				if ($0 ~ /^Entry #[0-9]+/) {
-					split($0, parts, "#")
+				if ($0 ~ /^\nEntry #[0-9]+/) {
+					split($2, parts, "#")
 					actual_id = parts[2]
 					print "Extracted ID:", actual_id > "/dev/stderr"  # Print to standard error to differentiate from main output
 				}
 
+				
 				# Match checks:
 
 				# If cutoff is id set start and end to entry number less/more than and equal cutoff start/end
 				if (is_id) {
-					#match_id_start = (actual_id >= cutoff_start)
-					#match_id_end = (actual_id <= cutoff_end)
-					match_id_start = (NR >= cutoff_start)
-					match_id_end = (NR <= cutoff_end)
+					match_id_start = (actual_id >= cutoff_start)
+					match_id_end = (actual_id <= cutoff_end)
+					#match_id_start = (NR >= cutoff_start)
+					#match_id_end = (NR <= cutoff_end)
 				}
 				# If cutoff is date set start and end to match the date of the record
 				else {
 					# Comment out for testing later
-					# match_date_start = (NR % 3 == 2 && $0 ~ cutoff_start)
-					# match_date_end = (NR % 3 == 2 && $0 ~ cutoff_end)
+					#match_date_start = (NR % 3 == 2 && $0 ~ cutoff_start)
+					#match_date_end = (NR % 3 == 2 && $0 ~ cutoff_end)
 					match_date_start = ($0 ~ cutoff_start)
 					match_date_end = ($0 ~ cutoff_end)
 				}
