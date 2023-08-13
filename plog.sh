@@ -304,10 +304,21 @@ then
 			}
 
 			{
-				# If cutoff is id set start and end to current record number equals cutoff start/end
+				# Extract the actual ID from the entry number in log entry
+				if ($0 ~ /^Entry #[0-9]+/) {
+					split($0, parts, "#")
+					actual_id = parts[2]
+					print "Extracted ID:", actual_id > "/dev/stderr"  # Print to standard error to differentiate from main output
+				}
+
+				# Match checks:
+
+				# If cutoff is id set start and end to entry number less/more than and equal cutoff start/end
 				if (is_id) {
-					match_id_start = (NR == cutoff_start)
-					match_id_end = (NR == cutoff_end)
+					#match_id_start = (actual_id >= cutoff_start)
+					#match_id_end = (actual_id <= cutoff_end)
+					match_id_start = (NR >= cutoff_start)
+					match_id_end = (NR <= cutoff_end)
 				}
 				# If cutoff is date set start and end to match the date of the record
 				else {
@@ -317,39 +328,38 @@ then
 					match_date_start = ($0 ~ cutoff_start)
 					match_date_end = ($0 ~ cutoff_end)
 				}
+
+				# Flag updates:
 				
 				# Checks if we passed the first match_start entry
 				if (match_id_start || match_date_start) {
 					start_passed = 1
 				}
-
 				# Checks if we passed all the match_start entries
 				if (start_passed && (!match_id_start || !match_date_start)) {
 					match_start_passed = 1
 				}
-
-				# If the position is before and the state is at the start print current entry
-				if (position == "before" && !match_id_start && !match_date_start && !match_start_passed) {
-					print_entries()
-				}
-
-				# If the position is between and we are passed match_start and until all of match_end, print current entry
-				else if (position == "between" && (match_id_start || match_date_start || (end_passed && (match_id_end || match_date_end)))) {
-					print_entries()
-				}
-
 				# Checks if we have reached the first entry of the cutoff_end
 				if (match_id_end || match_date_end) {
 					end_passed = 1
 				}
-				
 				# Checks if we passed all match_end entries
 				if (end_passed && !match_id_end && !match_date_end) {
 					match_end_passed = 1
 				}
 
+				# Position checks:
+
+				# If the position is before and the state is at the start print current entry
+				if (position == "before" && !match_id_start && !match_date_start && !start_passed && !match_start_passed) {
+					print_entries()
+				}
+				# If the position is between and we are passed match_start and until all of match_end, print current entry
+				else if (position == "between" && start_passed && !match_end_passed) {
+					print_entries()
+				}
 				# If position is after and we are passed the end match_end, print current entry
-				if (position == "after" && match_end_passed) {
+				else if (position == "after" && match_end_passed) {
 					print_entries()
 				}
 			}
