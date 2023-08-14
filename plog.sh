@@ -118,6 +118,86 @@ else
 	entry_number=1
 fi
 
+# Function to extract entries from the log file based on a cutoff (date/ID) and position
+extract_entries() {
+	awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
+		BEGIN {
+			# If sentence to check if cutoff is date or id and sets it to 0 or 1
+			is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
+
+			# Variable for flagging the first entry of cutoff_end
+			start_passed = 0
+			end_passed = 0
+			match_start_passed = 0
+			match_end_passed = 0
+		}
+
+		# Function to print the current entry followed by delimiter
+		function print_entries() {
+			print $0 "\n\n~~~~~~"
+		}
+
+		{
+			# Extract the actual ID from the entry number in log entry
+			if ($0 ~ /^\nEntry #[0-9]+/) {
+				split($2, parts, "#")
+				actual_id = parts[2]
+			}
+
+			
+			# Match checks:
+
+			# If cutoff is id set start and end to entry number less/more than and equal cutoff start/end
+			if (is_id) {
+				match_id_start = (actual_id >= cutoff_start)
+				match_id_end = (actual_id <= cutoff_end)
+			}
+			# If cutoff is date set start and end to match the date of the record
+			else {
+				# Split the record into lines
+				split($0, lines, "\n")
+
+				# Match date to the entry timestamp (third line of each entry)
+				match_date_start = (lines[3] ~ cutoff_start)
+				match_date_end = (lines[3] ~ cutoff_end)
+			}
+
+			# Flag updates:
+			
+			# Checks if we passed the first match_start entry
+			if (match_id_start || match_date_start) {
+				start_passed = 1
+			}
+			# Checks if we passed all the match_start entries
+			if (start_passed && (!match_id_start || !match_date_start)) {
+				match_start_passed = 1
+			}
+			# Checks if we have reached the first entry of the cutoff_end
+			if (match_id_end || match_date_end) {
+				end_passed = 1
+			}
+			# Checks if we passed all match_end entries
+			if (end_passed && !match_id_end && !match_date_end) {
+				match_end_passed = 1
+			}
+
+			# Position checks:
+
+			# If the position is before and the state is at the start print current entry
+			if (position == "before" && !match_id_start && !match_date_start && !start_passed && !match_start_passed) {
+				print_entries()
+			}
+			# If the position is between and we are passed match_start and until all of match_end, print current entry
+			else if (position == "between" && start_passed && !match_end_passed) {
+				print_entries()
+			}
+			# If position is after and we are passed the end match_end, print current entry
+			else if (position == "after" && match_end_passed) {
+				print_entries()
+			}
+		}
+	' "$logfile"
+}
 
 ## FLAG CHECKS
 
@@ -283,87 +363,6 @@ then
 		echo "This can have unintended consequences! (this warning can be turned off in settings)"
 		sleep 3
 	fi
-
-	# Function to extract entries from the log file based on a cutoff (date/ID) and position
-	extract_entries() {
-		awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
-			BEGIN {
-				# If sentence to check if cutoff is date or id and sets it to 0 or 1
-				is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
-
-				# Variable for flagging the first entry of cutoff_end
-				start_passed = 0
-				end_passed = 0
-				match_start_passed = 0
-				match_end_passed = 0
-			}
-
-			# Function to print the current entry followed by delimiter
-			function print_entries() {
-				print $0 "\n\n~~~~~~"
-			}
-
-			{
-				# Extract the actual ID from the entry number in log entry
-				if ($0 ~ /^\nEntry #[0-9]+/) {
-					split($2, parts, "#")
-					actual_id = parts[2]
-				}
-
-				
-				# Match checks:
-
-				# If cutoff is id set start and end to entry number less/more than and equal cutoff start/end
-				if (is_id) {
-					match_id_start = (actual_id >= cutoff_start)
-					match_id_end = (actual_id <= cutoff_end)
-				}
-				# If cutoff is date set start and end to match the date of the record
-				else {
-					# Split the record into lines
-					split($0, lines, "\n")
-
-					# Match date to the entry timestamp (third line of each entry)
-					match_date_start = (lines[3] ~ cutoff_start)
-					match_date_end = (lines[3] ~ cutoff_end)
-				}
-
-				# Flag updates:
-				
-				# Checks if we passed the first match_start entry
-				if (match_id_start || match_date_start) {
-					start_passed = 1
-				}
-				# Checks if we passed all the match_start entries
-				if (start_passed && (!match_id_start || !match_date_start)) {
-					match_start_passed = 1
-				}
-				# Checks if we have reached the first entry of the cutoff_end
-				if (match_id_end || match_date_end) {
-					end_passed = 1
-				}
-				# Checks if we passed all match_end entries
-				if (end_passed && !match_id_end && !match_date_end) {
-					match_end_passed = 1
-				}
-
-				# Position checks:
-
-				# If the position is before and the state is at the start print current entry
-				if (position == "before" && !match_id_start && !match_date_start && !start_passed && !match_start_passed) {
-					print_entries()
-				}
-				# If the position is between and we are passed match_start and until all of match_end, print current entry
-				else if (position == "between" && start_passed && !match_end_passed) {
-					print_entries()
-				}
-				# If position is after and we are passed the end match_end, print current entry
-				else if (position == "after" && match_end_passed) {
-					print_entries()
-				}
-			}
-		' "$logfile"
-	}
 
 	# Edit arguments
 	if [ "$2" = "date" ]
