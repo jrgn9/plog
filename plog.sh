@@ -308,7 +308,6 @@ then
 				if ($0 ~ /^\nEntry #[0-9]+/) {
 					split($2, parts, "#")
 					actual_id = parts[2]
-					print "Extracted ID:", actual_id > "/dev/stderr"  # Print to standard error to differentiate from main output
 				}
 
 				
@@ -318,16 +317,15 @@ then
 				if (is_id) {
 					match_id_start = (actual_id >= cutoff_start)
 					match_id_end = (actual_id <= cutoff_end)
-					#match_id_start = (NR >= cutoff_start)
-					#match_id_end = (NR <= cutoff_end)
 				}
 				# If cutoff is date set start and end to match the date of the record
 				else {
-					# Comment out for testing later
-					#match_date_start = (NR % 3 == 2 && $0 ~ cutoff_start)
-					#match_date_end = (NR % 3 == 2 && $0 ~ cutoff_end)
-					match_date_start = ($0 ~ cutoff_start)
-					match_date_end = ($0 ~ cutoff_end)
+					# Split the record into lines
+					split($0, lines, "\n")
+
+					# Match date to the entry timestamp (third line of each entry)
+					match_date_start = (lines[3] ~ cutoff_start)
+					match_date_end = (lines[3] ~ cutoff_end)
 				}
 
 				# Flag updates:
@@ -423,11 +421,11 @@ then
 			# No third argument, prompts user for id
 			echo "Edit by id"
 			echo "Enter one entry number or two numbers seperated by space for id range (optional)"
-			read -p "Enter entry number id " editid_start editid_end
+			read -p "Enter entry number id: " editid_start editid_end
 
 			# Add 1 to editid to match array index with entry ids
-			editid_start=$(($editid_start))
-			editid_end=$(($editid_end))
+			editid_start="$editid_start"
+			editid_end="$editid_end"
 
 			if [ -z "$editid_end" ]
 			then
