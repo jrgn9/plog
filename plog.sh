@@ -208,9 +208,15 @@ then
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" "$logfile".backup.log
 
+	# REMEMBER: CHANGE PATH AFTER INSTALLER!!!!!
+	# Counts the length of the init message
+	init_length=$(wc -l < init.txt)
+
+	# Add 5 lines to account for log title and delimiters
+	empty_length=$(($init_length + 5))
+
 	# Checks if there are any entries (skipping the init message)
-	# REMEMBER: UPDATE NR IF I CHANGE INIT MESSAGE!!!!
-	if [[ $(awk 'NR>10' "$logfile") == "" ]]
+	if [[ $(awk "NR>$empty_length" "$logfile") == "" ]]
 	then
 		echo "There are No entries to delete"
 		exit 1
@@ -224,9 +230,12 @@ then
 
 		elif [ "$2" = "last" ]
 		then
-			# Uses awk and delimiter to seperate entries, and copies everything
-			# except the last one to a temporary file, then overwrites the log with it
-			awk -v RS="\n\n~~~~~~\n" 'BEGIN{ORS=RS} NR>1 {print prev} {prev=$0} END{}' "$logfile" > tmpfile && mv tmpfile "$logfile"
+			# awk sentence to extract the last entry number
+			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
+
+			# Use extract_entries function to redirect everything but last entry to tmpfile and overwrite logfile
+			extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile
+			mv tmpfile "$logfile"
 
 			# Check if the file was modified and prints message accordingly
 			if [[ $? -eq 0 ]]
@@ -242,25 +251,43 @@ then
 			# Checks if id is provided as argument
 			if [ -n "$3" ]
 			then
-				# Sets searchid to be Entry # and third argument
-				delete_id="Entry #$3"
-			
+				# Sets deleteid to be the provided number
+				deleteid_start="$3"
+
+				# if there is a fourth argument, sets deleteid_end to fourth argument, otherwise sets to deleteid_start
+				if [ -n "$4" ]
+				then
+					deleteid_end="$4"
+				else
+					deleteid_end="$deleteid_start"
+				fi
 			else
-				# Sets searchid to be Entry # and the provided number
+				# Prompts the user for ids to delete
 				echo "Delete by entry number"
-				read -p "Enter entry number to delete: " deleteidnumber
-				delete_id="Entry #$deleteidnumber"
+				echo "Enter entry number to delete or two numbers seperated by space for deleting a range of entries (range inclusive)"
+				read -p "Enter entry number(s) to delete: " deleteid_start deleteid_end
+
+				# If no range is provided, sets deleteid_end to deleteid_start
+				if [ -z "$deleteid_end" ]
+				then
+					deleteid_end="$deleteid_start"
+				fi
 			fi
 
-			awk -v RS="\n\n~~~~~~\n" -v delete_id="$delete_id" 'tolower($0) ~ "(^|[^0-9])" tolower(delete_id) "([^0-9]|$)" { next } { print prev "\n\n~~~~~~" } { prev = $0 } END { print prev }' "$logfile" > tmpfile && mv tmpfile "$logfile"
-		
+			# Uses the extract_entries function to extract all the entries before and after the entries to delete
+			extract_entries "$deleteid_start" "$deleteid_end" "before" > tmpfile
+			extract_entries "$deleteid_start" "$deleteid_end" "after" >> tmpfile
+			
+			# Overwrites the extracted entries to the logfile
+			mv tmpfile "$logfile"
+
 			# Check if the file was modified and prints message accordingly
 			if [[ $? -eq 0 ]]
 			then
 				
-				echo "$delete_id deleted"
+				echo "Entry number $deleteid_start to $deleteid_end deleted"
 			else
-				echo "Could not delete $delete_id"
+				echo "Could not delete $deleteid_start to $deleteid_end"
 			fi
 		fi
 
@@ -438,11 +465,14 @@ then
 		# Edit last entry
 		echo "Edit last entry"
 
-		# Awk sentence that redirects the last entry to a tempfile
-    		awk -v RS="\n\n~~~~~~\n" 'END { print $0 "\n\n~~~~~~" }' "$logfile" > tmpfile
+		# awk sentence to extract the last entry number
+		last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
 
-    		# Store the original content in a variable before editing
-    		original_entries=$(awk -v RS="\n\n~~~~~~\n" 'END { print $0 "\n\n~~~~~~" }' "$logfile")
+		# Use extract_entries function to redirect the last entry to tmpfile
+		extract_entries "$last_entry_id" "$last_entry_id" "between" > tmpfile
+
+    	# Store the original content in a variable before editing
+		original_entries=$(extract_entries "$last_entry_id" "$last_entry_id" "between")
 
 	else
 		# No arguments
@@ -494,41 +524,32 @@ then
 			then
 				# Extract entries before the edit date and append them to tmpfile2
 				extract_entries "$editdate_start" "$editdate_end" "before" > tmpfile2
-				#DEBUG_
-				extract_entries "$editdate_start" "$editdate_end" "before" > before.txt
 
 				# Append the edited entries to tmpfile2
 				echo "$edited_entries" >> tmpfile2
-				# DEBUG:
-				echo "$edited_entries" > between.txt
 
 				# Extract entries after the edit date and append them to tmpfile2
 				extract_entries "$editdate_start" "$editdate_end" "after" >> tmpfile2
-				# DEBUG:
-				extract_entries "$editdate_start" "$editdate_end" "after" > after.txt
 			
 			elif [ -n "$editid_start" ]
 			then
 				# Extract entries before the entry id and append them to tmpfile2
 				extract_entries "$editid_start" "$editid_end" "before" > tmpfile2
-				# DEBUG:
-				extract_entries "$editid_start" "$editid_end" "before" > beforeid.txt
 
 				# Append the edited entries to tmpfile2
 				echo "$edited_entries" >> tmpfile2
-				# DEBUG:
-				echo "$edited_entries" > betweenid.txt
 
 				# Extract entries after the entry id and append them to tmpfile2
 				extract_entries "$editid_start" "$editid_end" "after" >> tmpfile2
-				# DEBUG:
-				extract_entries "$editid_start" "$editid_end" "after" > afterid.txt
 
 			else
 				# Edit last entry, since there are no editid or editdate
 
-				# Add the edited entries to tmpfile2
-				echo "$edited_entries" > tmpfile2
+				# Extract all entries before the last and append them to tmpfile2
+				extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile2
+
+				# Add the edited entry to tmpfile2
+				echo "$edited_entries" >> tmpfile2
 			fi
 
 			# Moves tmpfile2 back to the log file, overwriting it
