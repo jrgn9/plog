@@ -252,7 +252,6 @@ then
 				delete_id="Entry #$deleteidnumber"
 			fi
 
-
 			awk -v RS="\n\n~~~~~~\n" -v delete_id="$delete_id" 'tolower($0) ~ "(^|[^0-9])" tolower(delete_id) "([^0-9]|$)" { next } { print prev "\n\n~~~~~~" } { prev = $0 } END { print prev }' "$logfile" > tmpfile && mv tmpfile "$logfile"
 		
 			# Check if the file was modified and prints message accordingly
@@ -384,8 +383,8 @@ then
 		else
 			# No third argument, prompts user for date
 			echo "Edit by date"
-			echo "Enter one date or two dates seperated by space for a date range (optional) "
-			read -p "Enter date in format YYYY-MM-DD: " editdate_start editdate_end
+			echo "Enter one date or two dates seperated by space for a date range (optional)"
+			read -p "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
 
 			if [ -z "$editdate_end" ]
 			then
@@ -421,10 +420,6 @@ then
 			echo "Edit by id"
 			echo "Enter one entry number or two numbers seperated by space for id range (optional)"
 			read -p "Enter entry number id: " editid_start editid_end
-
-			# Add 1 to editid to match array index with entry ids
-			editid_start="$editid_start"
-			editid_end="$editid_end"
 
 			if [ -z "$editid_end" ]
 			then
@@ -567,15 +562,31 @@ then
 		if [ -n "$3" ]
 		then
 			# Sets printdate to be third argument
-			printdate="$3"
+			printdate_start="$3"
+
+			# If there is a fourth argument, sets printdate_end to fourth argument
+			if [ -n "$4" ]
+			then
+				printdate_end="$4"
+			else
+				# If there is no fourth argument, sets printdate_end to printdate_start
+				printdate_end="$printdate_start"
+			fi
+
 		else
 			# No third argument, prompts user for date
-			read -p "Enter date in format YYYY-MM-DD: " printdate
+			echo "Enter one date or two dates seperated by space for a date range (optional)"
+			read -p "Enter date(s) in format YYYY-MM-DD: " printdate_start printdate_end
+
+			# If there is no end date set it to be the same as start
+			if [ -z "$printdate_end" ]
+			then
+				printdate_end="$printdate_start"
+			fi
 		fi
 
-		# Awk sentence that redirects all matching dates to a tempfile
-		# For some reason it considers the init text to be a part of the first entry
-		awk -v RS="\n\n~~~~~~\n" -v date="$printdate" '$0 ~ date { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+		# Use the extract_entries function to redirect matching entries to a tmpfile
+		extract_entries "$printdate_start" "$printdate_end" "between" > tmpfile
 
 		# If there is content in the tempfile, print and remove file
 		if [ -s "tmpfile" ]
@@ -597,19 +608,34 @@ then
 		# Checks if id is provided as argument
 		if [ -n "$3" ]
 		then
-			# Sets searchid to be Entry # and third argument
-			searchid="Entry #$3"
+			# Sets printid_start to be the third argument
+			printid_start="$3"
+
+			# If there is a fourth argument, sets printid_end to fourth argument
+			if [ -n "$4" ]
+			then
+				printid_end="$4"
+			else
+				# If there is no fourth argument, sets printid_end to printid_start
+				printid_end="$printid_start"
+			fi
 		
 		else
-			# Sets searchid to be Entry # and the provided number
-			read -p "Enter entry number: " searchidnumber
-			searchid="Entry #$searchidnumber"
+			# No third argument, prompts user for date
+			echo "Enter one entry number or two numbers seperated by space for an id range (optional)"
+			read -p "Enter entry number(s): " printid_start printid_end
+			
+			# If there is no end id set it to be the same as start
+			if [ -z "$printid_end" ]
+			then
+				printid_end="$printid_start"
+			fi
+
 		fi
 
-		# Awk sentence that redirects all matching entries to a tempfile based on the entry id
-		# The id number is match exactly on the given number
-		awk -v RS="\n\n~~~~~~\n" -v search="$searchid" 'tolower($0) "(^|[^0-9])" ~ tolower(search) "([^0-9]|$)" { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
-		
+		# Use the extract_entries function to redirect matching entries to a tmpfile
+		extract_entries "$printid_start" "$printid_end" "between" > tmpfile
+
 		# If there is content in the tempfile, print and remove files
 		if [ -s "tmpfile" ]
 		then
