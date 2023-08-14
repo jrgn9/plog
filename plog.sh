@@ -274,6 +274,13 @@ then
 				fi
 			fi
 
+			# Check if deleteid_start is empty
+			if [ -z "$deleteid_start" ]
+			then
+				echo "No ID provided. Aborting delete operation."
+				exit 1
+			fi
+
 			# Uses the extract_entries function to extract all the entries before and after the entries to delete
 			extract_entries "$deleteid_start" "$deleteid_end" "before" > tmpfile
 			extract_entries "$deleteid_start" "$deleteid_end" "after" >> tmpfile
