@@ -1,6 +1,7 @@
 #! /bin/bash
 
 # Fetches settings from .config
+# REMEMBER TO CHANGE PATH WITH INSTALL AND ERROR HANDLE IF CONFIG CANNOT BE SOURCED
 source config
 
 # Finds current directory
@@ -8,7 +9,7 @@ current_directory="$(pwd)"
 
 ## CHECKS FOR META FLAGS
 # HELP FLAG
-if [ "$1" = "--help" -o "$1" = "-h" ]
+if [ "$1" = "--help" ] || [ "$1" = "-h" ]
 then
 	# Prints help message and exits
 	# FIX PATH FOR THIS AFTER INSTALLER
@@ -67,12 +68,12 @@ elif [ -z "$logs" ]
 then
 	# Prompts user for file name
 	echo -e "No log file detected \nDo you want to add a new log file? y/n"
-	read answer
+	read -r answer
 
-	if [ "$answer" = "y" -o "$answer" = "Y" -o "$answer" = "yes" ]
+	if [ "$answer" = "y" ] || [ "$answer" = "Y" ] || [ "$answer" = "yes" ]
 	then
 		echo "Enter name for new log file (default: p.log)"
-		read filename
+		read -r filename
 	
 		# If no name is entered, default is p
 		if [ -z "$filename" ]
@@ -84,15 +85,16 @@ then
 		echo "Creating file $filename.log in current directory"
 		touch "$filename.log"
 
-		read -p "Enter title for the document: " title
+		read -rp "Enter title for the document: " title
 
 		# Adds the init message and title to the log file
-		cat ./init.txt > $filename.log
-		echo -e "---START OF LOG---\n" >> $filename.log
-		echo -e "$title" >> $filename.log
-		echo -e "\n~~~~~~" >> $filename.log
-
-		#### Might add prompt for description for start of the log
+		{
+			cat ./init.txt
+			echo -e "---START OF LOG---\n"
+			echo -e "$title"
+			echo -e "\n~~~~~~"
+		} > "$filename.log"
+		
 	else
 		echo "No log file created"
 		exit 1
@@ -202,7 +204,7 @@ extract_entries() {
 ## FLAG CHECKS
 
 # DELETE ENTRY FLAG
-if [ "$1" = "--delete" -o "$1" = "-d" ]
+if [ "$1" = "--delete" ] || [ "$1" = "-d" ]
 then
 	# Creates a backup before deleting entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
@@ -213,7 +215,7 @@ then
 	init_length=$(wc -l < init.txt)
 
 	# Add 5 lines to account for log title and delimiters
-	empty_length=$(($init_length + 5))
+	empty_length=$((init_length + 5))
 
 	# Checks if there are any entries (skipping the init message)
 	if [[ $(awk "NR>$empty_length" "$logfile") == "" ]]
@@ -224,7 +226,7 @@ then
 		if [ -z "$2" ]
 		then
 			# Invokes the program recursively if the user haven't provided a second argument
-			read -p "Do you want to delete by id or the last entry? (id/last):" answer
+			read -rp "Do you want to delete by id or the last entry? (id/last):" answer
 			# THIS NEEDS TO BE UPDATED WHEN THE PROGRAM IS FINNISHED!
 			"./plog.sh" -d "$answer"
 
@@ -232,12 +234,11 @@ then
 		then
 			# awk sentence to extract the last entry number
 			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
-			echo "DEBUG: Last Entry ID: $last_entry_id"
 
 			# Use extract_entries function to redirect everything but last entry to tmpfile
 			extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile
 		
-		elif [ "$2" = "id" -o "$2" = "ID" ]
+		elif [ "$2" = "id" ] || [ "$2" = "ID" ]
 		then
 			# Checks if id is provided as argument
 			if [ -n "$3" ]
@@ -255,8 +256,8 @@ then
 			else
 				# Prompts the user for ids to delete
 				echo "Delete by entry number"
-				echo "Enter entry number to delete or two numbers seperated by space for deleting a range of entries (range inclusive)"
-				read -p "Enter entry number(s) to delete: " deleteid_start deleteid_end
+				echo "Enter entry number to delete or two numbers separated by space for deleting a range of entries (range inclusive)"
+				read -rp "Enter entry number(s) to delete: " deleteid_start deleteid_end
 
 				# If no range is provided, sets deleteid_end to deleteid_start
 				if [ -z "$deleteid_end" ]
@@ -277,8 +278,6 @@ then
 			extract_entries "$deleteid_start" "$deleteid_end" "after" >> tmpfile
 		fi
 
-		echo "DEBUG before printing: Last Entry ID: $last_entry_id"
-
 		# If the delete confirmation is still on in config, prompt the user if it is sure
 		if [ "$delete_confirmation" = "on" ]
 		then
@@ -298,16 +297,17 @@ then
 				echo "You are about to delete entry number from $deleteid_start to $deleteid_end"
 			fi
 			
-			read -p "Are you sure you want to delete? (y/n): " answer
+			read -rp "Are you sure you want to delete? (y/n): " answer
 
 			# If the user confirms the deletion
-			if [ "$answer" = "y" -o "$answer" = "Y" ]
+			if [ "$answer" = "y" ] || [ "$answer" = "Y" ]
 			then
 				# Overwrites the extracted entries to the logfile
 				mv tmpfile "$logfile"
 			else
 				# User declines the deletion
 				echo "Delete operation aborted"
+				rm -f tmpfile
 				exit 1
 			fi
 
@@ -352,7 +352,7 @@ then
 	fi
 
 # RESTORE TO BACKUP FLAG
-elif [ "$1" = "--restore" -o "$1" = "-r" ]
+elif [ "$1" = "--restore" ] || [ "$1" = "-r" ]
 then
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
@@ -361,10 +361,10 @@ then
 	exit 0
 
 # CHANGE AUTHOR FLAG
-elif [ "$1" = "--author" -o "$1" = "-a" ]
+elif [ "$1" = "--author" ] || [ "$1" = "-a" ]
 then
 	# Prompt user for name
-	read -p "Enter author name: " author
+	read -rp "Enter author name: " author
 	
 	# Checks if user provided author name
 	if [ -z "$author" ]
@@ -372,10 +372,11 @@ then
 		echo "Error: No author name provided. Author not changed"
 		exit 1
 	
-	elif [ "$author" = "user" -o "$author" = "User" ]
+	elif [ "$author" = "user" ] || [ "$author" = "User" ]
 	then
 		sed -i "s/author=.*/author=\$(whoami)/" config
 		
+		# REMEMBER TO CHANGE PATH AFTER INSTALL!!
 		source config
 		
 		echo "Author successfully reverted to computer user name: $author"
@@ -387,6 +388,7 @@ then
 	sed -i "s/author=.*/author=\"$author\"/" config
 
 	# Source the updated .config file
+	# REMEMBER TO CHANGE PATH AFTER INSTALL!!
 	source config
 	
 	# Author successfully added
@@ -395,7 +397,7 @@ then
 	exit 0
 
 # IMPORT FLAG
-elif [ "$1" = "--import" -o "$1" = "-i" ]
+elif [ "$1" = "--import" ] || [ "$1" = "-i" ]
 then
 	# Checks if user has provided file as argument to skip being prompted
 	if [ -e "$2" ]
@@ -404,7 +406,7 @@ then
 	else
 	
 		echo "Enter the file name or relative path of the file to import (default: $current_directory/):"
-		read filename
+		read -r filename
 	fi
 	
 	# If the user didn't provide a filename, use the current directory as the default
@@ -417,7 +419,7 @@ then
 	fi
 
 	# Redirects content of the file to a tempfile
-	cat $filepath > tmpfile
+	cat "$filepath" > tmpfile
 	
 	# Checks if there are content in the tempfile
 	if [ -s tmpfile ]
@@ -433,7 +435,7 @@ then
 	fi
 
 # EDIT FLAG
-elif [ "$1" = "--edit" -o "$1" = "-e" ]
+elif [ "$1" = "--edit" ] || [ "$1" = "-e" ]
 then
 	# Creates a backup before editing entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
@@ -467,8 +469,8 @@ then
 		else
 			# No third argument, prompts user for date
 			echo "Edit by date"
-			echo "Enter one date or two dates seperated by space for a date range (optional)"
-			read -p "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
+			echo "Enter one date or two dates separated by space for a date range (optional)"
+			read -rp "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
 
 			if [ -z "$editdate_end" ]
 			then
@@ -481,7 +483,7 @@ then
 		# Store the original content in a variable before editing
 		original_entries=$(extract_entries "$editdate_start" "$editdate_end" "between")
 
-	elif [ "$2" = "id"  -o "$2" = "ID" ]
+	elif [ "$2" = "id"  ] || [ "$2" = "ID" ]
 	then
 		# Edit by id argument
 
@@ -502,8 +504,8 @@ then
 		else
 			# No third argument, prompts user for id
 			echo "Edit by id"
-			echo "Enter one entry number or two numbers seperated by space for id range (optional)"
-			read -p "Enter entry number id: " editid_start editid_end
+			echo "Enter one entry number or two numbers separated by space for id range (optional)"
+			read -rp "Enter entry number id: " editid_start editid_end
 
 			if [ -z "$editid_end" ]
 			then
@@ -563,10 +565,10 @@ then
 		if [ "$num_entries_before" != "$num_entries_after" ]
 		then
 			echo "Warning: The number of log entries has been modified." 
-			echo "This might be due to editing seperators or the format."
+			echo "This might be due to editing separators or the format."
 			echo "Before editing: $num_entries_before entries"
 			echo "After editing: $num_entries_after entries"
-			read -p "Are you sure you want to save your changes? (y/n): " error_answer
+			read -rp "Are you sure you want to save your changes? (y/n): " error_answer
 			edit_error=1
 		fi
 
@@ -631,7 +633,7 @@ exit 0
 
 
 # PRINT FLAG
-elif [ "$1" = "--print" -o "$1" = "-p" ]
+elif [ "$1" = "--print" ] || [ "$1" = "-p" ]
 then
 	# Checks if there is a date flag for printing by date
 	if [ "$2" = "date" ]
@@ -653,8 +655,8 @@ then
 
 		else
 			# No third argument, prompts user for date
-			echo "Enter one date or two dates seperated by space for a date range (optional)"
-			read -p "Enter date(s) in format YYYY-MM-DD: " printdate_start printdate_end
+			echo "Enter one date or two dates separated by space for a date range (optional)"
+			read -rp "Enter date(s) in format YYYY-MM-DD: " printdate_start printdate_end
 
 			# If there is no end date set it to be the same as start
 			if [ -z "$printdate_end" ]
@@ -679,7 +681,7 @@ then
 			exit 1
 		fi
 
-	elif [ "$2" = "id" -o "$2" = "ID" ]
+	elif [ "$2" = "id" ] || [ "$2" = "ID" ]
 	then
 		# If the print by id argument is added
 		
@@ -700,8 +702,8 @@ then
 		
 		else
 			# No third argument, prompts user for date
-			echo "Enter one entry number or two numbers seperated by space for an id range (optional)"
-			read -p "Enter entry number(s): " printid_start printid_end
+			echo "Enter one entry number or two numbers separated by space for an id range (optional)"
+			read -rp "Enter entry number(s): " printid_start printid_end
 			
 			# If there is no end id set it to be the same as start
 			if [ -z "$printid_end" ]
@@ -738,7 +740,7 @@ then
 			# Sets searchstring to be the third argument
 			searchstring="$3"
 		else
-			read -p "Enter search string: " searchstring
+			read -rp "Enter search string: " searchstring
 		fi
 
 		# Awk sentence that redirects all matching entries to a tempfile based on the search string
@@ -767,7 +769,7 @@ then
 			# Sets authorname to be the third argument
 			authorname="$3"
 		else
-			read -p "Enter author name: " authorname
+			read -rp "Enter author name: " authorname
 		fi
 
 		# Awk sentence that redirects all matching entries to a tempfile based on the author name
@@ -792,7 +794,7 @@ then
 	fi
 
 # SHORT MESSAGE FLAG
-elif [ "$1" = "--msg" -o "$1" = "-m" ]
+elif [ "$1" = "--msg" ] || [ "$1" = "-m" ]
 then	
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
@@ -816,7 +818,7 @@ else
 	# NO FLAGS
 
 	# Checks if there are no flags provided to ensure positional arguments
-	if [ ! -z "$2" ]
+	if [ -n "$2" ]
 	then
 		echo "Error: Flag arguments are positional and must be the first argument"
 		exit 1
