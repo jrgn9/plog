@@ -218,7 +218,7 @@ then
 	# Checks if there are any entries (skipping the init message)
 	if [[ $(awk "NR>$empty_length" "$logfile") == "" ]]
 	then
-		echo "There are No entries to delete"
+		echo "There are no entries to delete"
 		exit 1
 	else
 		if [ -z "$2" ]
@@ -232,19 +232,10 @@ then
 		then
 			# awk sentence to extract the last entry number
 			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
+			echo "DEBUG: Last Entry ID: $last_entry_id"
 
-			# Use extract_entries function to redirect everything but last entry to tmpfile and overwrite logfile
+			# Use extract_entries function to redirect everything but last entry to tmpfile
 			extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile
-			mv tmpfile "$logfile"
-
-			# Check if the file was modified and prints message accordingly
-			if [[ $? -eq 0 ]]
-			then
-				
-				echo "Entry #$last_entry_number deleted"
-			else
-				echo "Could not delete last entry"
-			fi
 		
 		elif [ "$2" = "id" -o "$2" = "ID" ]
 		then
@@ -284,18 +275,77 @@ then
 			# Uses the extract_entries function to extract all the entries before and after the entries to delete
 			extract_entries "$deleteid_start" "$deleteid_end" "before" > tmpfile
 			extract_entries "$deleteid_start" "$deleteid_end" "after" >> tmpfile
+		fi
+
+		echo "DEBUG before printing: Last Entry ID: $last_entry_id"
+
+		# If the delete confirmation is still on in config, prompt the user if it is sure
+		if [ "$delete_confirmation" = "on" ]
+		then
+			# Checks for range, only one id or the last entry which are about to be deleted and prints message accordingly
+			# If there is no deleteid, it is the last entry
+			if [ -z "$deleteid_start" ]
+			then
+				echo "You are about to delete the last entry, entry #$last_entry_id"
+
+			# If start and end is the same, it is only one id
+			elif [ "$deleteid_start" = "$deleteid_end" ]
+				then
+					echo "You are about to delete entry #$deleteid_start"
+
+			else
+				# Else there is a range
+				echo "You are about to delete entry number from $deleteid_start to $deleteid_end"
+			fi
 			
+			read -p "Are you sure you want to delete? (y/n): " answer
+
+			# If the user confirms the deletion
+			if [ "$answer" = "y" -o "$answer" = "Y" ]
+			then
+				# Overwrites the extracted entries to the logfile
+				mv tmpfile "$logfile"
+			else
+				# User declines the deletion
+				echo "Delete operation aborted"
+				exit 1
+			fi
+
+		else
+			# Delete confirmation is turned off in config
 			# Overwrites the extracted entries to the logfile
 			mv tmpfile "$logfile"
+		fi
 
-			# Check if the file was modified and prints message accordingly
-			if [[ $? -eq 0 ]]
+		# Check if the file was modified, which ids was used and prints message accordingly
+		if [[ $? -eq 0 ]]
+		then
+			if [ -z "$deleteid_start" ]
 			then
-				
-				echo "Entry number $deleteid_start to $deleteid_end deleted"
+				echo "Entry #$last_entry_id deleted"
+
+			elif [ "$deleteid_start" = "$deleteid_end" ]
+				then
+					echo "Entry #$deleteid_start deleted"
+
 			else
-				echo "Could not delete $deleteid_start to $deleteid_end"
+				echo "Entry number from $deleteid_start to $deleteid_end deleted"
 			fi
+		else
+			# If the file was not modified, print error message
+			if [ -z "$deleteid_start" ]
+			then
+					echo "Could not delete last entry"
+
+			elif [ "$deleteid_start" = "$deleteid_end" ]
+			then
+				echo "Could not delete entry #$deleteid_start"
+
+			else
+				echo "Could not delete from entry number $deleteid_start to $deleteid_end"
+			fi
+
+			exit 1
 		fi
 
 		exit 0
