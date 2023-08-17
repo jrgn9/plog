@@ -21,4 +21,8 @@ program_folder="/home/$USER/.plog"
 # change it to "off" to turn off the warning
 edit_warning="off"
 
+# Enables confirmation before deleting an entry
+# change it to "off" to turn off the confirmation
+delete_confirmation="on"
+
 # Might add settings for auto backup, case sensitive search and entry title
