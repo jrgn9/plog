@@ -19,7 +19,7 @@ program_folder="/home/$USER/.plog"
 
 # Enables warning message before editing
 # change it to "off" to turn off the warning
-edit_warning="off"
+edit_warning="on"
 
 # Enables confirmation before deleting an entry
 # change it to "off" to turn off the confirmation
