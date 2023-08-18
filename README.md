@@ -62,9 +62,9 @@ This is a list of options which can be used when invoking plog. When no option i
 |              |              |                          | No options: Opens the default text editor for writing longer log entries                                                                                                                 |
 | \-h          | \--help      |                          | Display help message                                                                                                                                                                     |
 | \-m          | \--msg       | ** "entry text"            | Write short message without entering a text editor. Must be in "quotes"                                                                                                                  |
-| \-d          | \--delete    |** last, id                 | Delete an entry. Creates a backup file which can be reverted. Use with 'last' or 'id' to delete based on those options                                                                   |
-| \-e          | \--edit      | last, id, date           | Opens the log file in your default text editor for editing. Opens the whole file if there are no second argument. Use 'last', 'id' or 'date' to edit entries based on those options.     |
-| \-p          | \--print     | id, date, author, search | Prints log entries to terminal. Prints the whole file if no extra arguments are present. Use 'id', 'date', 'author' or 'search' to filter out entries.                                   |
+| \-d          | \--delete    |** last, id                 | Delete an entry. Creates a backup file which can be reverted. Use with 'last' or 'id' to delete based on those options. Provide two id numbers for deleting a range of entries.                                                                   |
+| \-e          | \--edit      | last, id, date           | Opens the log file in your default text editor for editing. Opens the whole file if there are no second argument. Use 'last', 'id' or 'date' to edit entries based on those options. Provide two dates or id numbers for editing a range of entries.    |
+| \-p          | \--print     | id, date, author, search | Prints log entries to terminal. Prints the whole file if no extra arguments are present. Use 'id', 'date', 'author' or 'search' to filter out entries. Provide two dates or id numbers for printing a range of entries.                                   |
 | \-i          | \--import    | relative/path/to/file    | Imports the content of a file and adds it as a log entry. Uses relative path based on your current directory. Prompts you for file path if you haven't provided it as a second argument. |
 | \-r          | \--revert    |                          | Revert log file back to before doing an edit/deletion. A backup is created after deleting or editing a file, in case of accidents.                                                       |
 | \-a          | \--author    |                          | Set author name in config. Default is the computer user name. Write 'user' to revert back to default author name.                                                                        |
@@ -74,6 +74,8 @@ This is a list of options which can be used when invoking plog. When no option i
 |              | \--uninstall |                          | Uninstall plog by running an uninstall script (log files are not affected)                                                                                                               |
 
 ** *Secondary option is required*
+
+*Note: For date or id ranges (in print, edit or delete) you can write them directly as a third option or you will be prompted if you don't provide them directly. The ranges are inclusive.*
 
 #### Examples:
 
@@ -93,6 +95,15 @@ This is a list of options which can be used when invoking plog. When no option i
 
 `plog -i ../Downloads/fun.txt`
 
+**Edit entry number 4 to 8 (inclusive)**
+
+`plog -e id 4 8` 
+
+**Edit all entries from 20. July 2023:**
+
+`plog -e date 2023-07-20`
+
+*(If you write plog -e id or date without a third argument you will be prompted for one or two entry id numbers/dates)*
 ___
 ### Settings
 
@@ -104,7 +115,11 @@ You can change some settings in the config file:
 
 **Initialization text:** This text is the start of every log file. By default it will say that it is a log file created by plog, and a divider to show where the log file starts. This text can be edited by using the plog --init option.
 
-*Might add: Settings for auto backup, entry title, case sensitive search*
+**Default program folder path:** By default the files for the program are located at /home/$USER/.plog. If you want to move this folder you can enter a new path. If you change the path you will also be prompted for the new path the first time you invoke plog.
+
+**Edit warning/delete confirmation:** You can turn off edit warning which warns you that messing up the log structure and delimiters can have unintended consequences. The delete confirmation prompts you for a confirmation before you delete entries. If you don't want this you can turn one or both off.
+
+*Might add: Settings for auto backup and case sensitive search*
 
 ## License and attributions
 This project is licensed with [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.en.html)
@@ -119,7 +134,7 @@ plog is made by Jørgen Skontorp
 
 ✅  Pre-alpha test prototype with all functionality
 
-❌ Create an install script and binary file
+❌ Create an install script with binary file and auto backup functionality
 
 ❌ Alpha test with program installer
 
@@ -130,5 +145,3 @@ plog is made by Jørgen Skontorp
 ❌ MacOS compatible version
 
 ❌ WSL compatible version
-
-❌ Powershell script version for Windows (if I bother...)
