@@ -5,28 +5,23 @@
     
 plog is a command line tool for creating project logs and entries from CLI. Keep track of projects (or anything) by having simple log files. Perfect for large school projects that require progress documentation. Written in Bash.
 
-## Install
-The current version is in pre-alpha, so there are no install script yet. This version relies only on running the script directly. To run this program, download this repo and make sure the script have execution rights by running chmod:
+## 📥 Install
+Download the latest version or use git to clone the repo. Make sure to give the install script execution rights:
 
-`chmod u+x plog.sh`
+`sudo chmod u+x install.sh`
 
-Invoke the script by running: 
+Run the install script with sudo: 
 
-`./plog.sh`
+`sudo ./install.sh`
 
-plog will then create a log file in the current directory.
+The installer must be run with sudo so that the script have access to moving the binary file to /usr/local/bin and create a .plog folder. The script moves the programs binary file to /usr/local/bin so that the program can be executed from wherever. It creates a .plog folder in /home/$USER/ where all the program files are located. This is also the folder where backups will be saved.
 
-**Note:** The script relies on being in the same directory as the help.txt and config files for now. If you want to create logs in another directory you will have to move both these files with the script.
+## ⚡ Quick start
 
-***
+Something about how to do this shit quick
 
-This program will have an installer script when I am done with pre-alpha. 
 
-Make sure install.sh have execution rights with `chmod +x install.sh`. Then run the script with sudo so that the script have access to moving the binary file to /usr/bin: `sudo ./install.sh`
-
-The install script moves the programs binary file to /usr/bin so that the program can be executed from wherever. It creates a .plog folder in /home/$USER/ where all the program files are located. This is also the folder where backups will be saved.
-
-## How to use
+## 📝 How to use
 Invoke plog with ./plog.sh. *Usage:* ./plog.sh [option]. 
 
 By invoking without any options, the default text editor will open for longer log entries.
@@ -53,7 +48,7 @@ Author: <Author name>
 ```
 ___
 
-### Options:
+### 🧰 Options:
 
 This is a list of options which can be used when invoking plog. When no option is given, the default editor will open for writing longer entries. The secondary options are optional, except for delete where you have to specify what to delete and -m where you need to write the entry in quotes. 
  
@@ -105,7 +100,7 @@ This is a list of options which can be used when invoking plog. When no option i
 
 *(If you write plog -e id or date without a third argument you will be prompted for one or two entry id numbers/dates)*
 ___
-### Settings
+### ⚙️ Settings
 
 You can change some settings in the config file:
 
@@ -115,33 +110,29 @@ You can change some settings in the config file:
 
 **Initialization text:** This text is the start of every log file. By default it will say that it is a log file created by plog, and a divider to show where the log file starts. This text can be edited by using the plog --init option.
 
-**Default program folder path:** By default the files for the program are located at /home/$USER/.plog. If you want to move this folder you can enter a new path. If you change the path you will also be prompted for the new path the first time you invoke plog.
-
 **Edit warning/delete confirmation:** You can turn off edit warning which warns you that messing up the log structure and delimiters can have unintended consequences. The delete confirmation prompts you for a confirmation before you delete entries. If you don't want this you can turn one or both off.
 
-*Might add: Settings for auto backup and case sensitive search*
+*Might add: Settings for auto backup*
 
-## License and attributions
+## 🪪 License and attributions
 This project is licensed with [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.en.html)
 
 [Tractor icons created by Futuer - Flaticon](https://www.flaticon.com/free-icons/tractor)
 
 plog is made by Jørgen Skontorp
 
-## Roadmap
+## 🚧 Roadmap
 
 ✅ Create a basic working prototype
 
-✅  Pre-alpha test prototype with all functionality
+✅ Pre-alpha test prototype with all functionality
 
-❌ Create an install script with binary file and auto backup functionality
+❌ Create an install script with binary file 
 
 ❌ Alpha test with program installer
+
+❌ Add auto backup functionality
 
 ❌ Open beta test
 
 ❌ Release for Linux
-
-❌ MacOS compatible version
-
-❌ WSL compatible version
