@@ -2,6 +2,9 @@
 
 # Script for installing plog
 
+# Extract the home folder of the user who is logged in (since sudo makes $HOME to root)
+USER_HOME=$(getent passwd $(logname) | cut -d: -f6)
+
 # Defining repository details
 USER="jrgn9"
 REPO="plog"
@@ -39,17 +42,20 @@ else
 fi
 
 # Proceeds to the install process 
-if [ -d "$HOME/.plog" ]
+if [ -d "$USER_HOME/.plog" ]
 then
     echo ".plog directory already exists. All existing program files, including settings, will be overwritten. Backups will not be affected"
 else
-    echo "Creating .plog directory for program files in $HOME"
-    mkdir "$HOME/.plog"
+    echo "Creating .plog directory for program files in $USER_HOME"
+    mkdir "$USER_HOME/.plog"
 fi
 
-echo "Moving program files to $HOME/.plog"
-mv program_files/* "$HOME/.plog/"
-cp README.md "$HOME/.plog/"
+echo "Moving program files to $USER_HOME/.plog"
+mv program_files/* "$USER_HOME/.plog/"
+cp README.md "$USER_HOME/.plog/"
+
+# Change the ownership from root (because of sudo) to the user
+chown -R $(logname):$(logname) "$USER_HOME/.plog"
 
 echo "Giving plog the right permissions"
 chmod 755 plog
