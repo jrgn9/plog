@@ -55,3 +55,5 @@ chmod 755 plog
 
 echo "Moving plog program to /usr/local/bin. Older versions of the program will be overwritten"
 mv plog /usr/local/bin
+
+echo "Installation complete. Run 'plog -h' in terminal for help or read the documentation"
