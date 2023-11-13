@@ -18,15 +18,34 @@ The installer must be run with sudo so that the script have access to moving the
 
 ## ⚡ Quick start
 
-Something about how to do this shit quick
+For help and list over all functionality:
 
+`plog -h`
+
+In the directory you want to create a log:
+
+`plog`
+
+Follow prompts to set file name and title and add first log entry. After saving you can print the log:
+
+`plog -p`
+
+To delete the last entry you made:
+
+`plog -d last`
+
+To restore the log to before the deletion:
+
+`plog -r`
+
+To edit program settings to remove edit/delete warning, author name or default text editor:
+
+`plog --settings`
 
 ## 📝 How to use
-Invoke plog with ./plog.sh. *Usage:* ./plog.sh [option]. 
+**Usage:** `plog [option]`
 
-By invoking without any options, the default text editor will open for longer log entries.
-
-The first time you run the program it will check if there is a log file present in the current directory. If not, you are prompted for a file name which creates the file. 
+By invoking without any options, the default text editor will open for longer log entries. The first time you run the program it will check if there is a log file present in the current directory. If not, you are prompted for a file name which creates the file. 
 
 **Important:** There can only be *one* log file in the current directory for the program to work. Except for a backup file when creating a backup of the log file.
 
@@ -100,9 +119,10 @@ This is a list of options which can be used when invoking plog. When no option i
 
 *(If you write plog -e id or date without a third argument you will be prompted for one or two entry id numbers/dates)*
 ___
+
 ### ⚙️ Settings
 
-You can change some settings in the config file:
+You can change some settings in the config file (manually or by running plog --settings)
 
 **Author:** Can be changed by invoking plog.sh -a or by manually entering it in the config file. The author name will be displayed in each log entry. The default is your computer username (whoami).
 
@@ -113,6 +133,10 @@ You can change some settings in the config file:
 **Edit warning/delete confirmation:** You can turn off edit warning which warns you that messing up the log structure and delimiters can have unintended consequences. The delete confirmation prompts you for a confirmation before you delete entries. If you don't want this you can turn one or both off.
 
 *Might add: Settings for auto backup*
+
+### 🚮 Uninstall
+
+To uninstall run `plog --uninstall`. An uninstall script will run. All the program files will be deleted. You can choose if you want to keep your backups or want them removed. All .plog files will not be affected by the uninstallation (unless they are in the .plog folder in home directory).
 
 ## 🪪 License and attributions
 This project is licensed with [GNU General Public License v3](https://www.gnu.org/licenses/gpl-3.0.en.html)
@@ -127,7 +151,7 @@ plog is made by Jørgen Skontorp
 
 ✅ Pre-alpha test prototype with all functionality
 
-❌ Create an install script with binary file 
+✅ Create an install script with binary file 
 
 ❌ Alpha test with program installer
 
