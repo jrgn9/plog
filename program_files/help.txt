@@ -1,0 +1,56 @@
+plog is a command line tool for creating project logs.
+If a .log file does not exist then one will be created in current directory.
+Default name is p.log
+
+NOTE: There cannot be more than one .log file per directory!
+
+Usage:	plog [option] [optional second argument]
+
+No options: Opens the default text editor for writing longer log entries
+
+Options:
+-h	--help		Display this help message
+
+-m	--msg		Write short message without entering a text editor. 
+			The text must be as a secondary option and in "quotes".
+
+-d	--delete	Delete an entry. Creates a backup file which can be reverted.
+			Second argument is required. Supports two second arguments:
+
+			- last: Deletes the last entry in the file
+			- id: Deletes entry based on the id provided. 
+				Two numbers separated by space for deleting a range of entries
+
+-e	--edit		Opens the log file in your default text editor for editing.
+			Opens the whole file by default, but supports three second arguments:
+
+			- last: For editing the last entry in the file
+			- id: For editing entry based on the id provided
+			- date: For selecting entries to edit based on date provided
+				Provide two numbers or dates separated by space for editing a range of entries
+
+-p	--print		Prints log entries to terminal. Prints the whole file if no extra arguments are present.
+			Supports four second arguments:
+
+			- author: Prints all entries from the provided author (case insensitive)
+			- search: Prints all entries that matches search query (case insensitive)
+			- id: Prints entry based on the id provided
+			- date: Prints all entries based on the date provided (YYYY-MM-DD format)
+				Provide two numbers or dates separated by space for printing a range of entries
+
+-i	--import	Imports the content of a file and adds it as a log entry.
+			Uses relative path based on your current directory.
+			Prompts you for file path or you can provide it as a second argument.
+
+-r	--restore	Restore log file back to before doing an edit/deletion. 
+			A backup is created after deleting or editing a file, in case of accidents.
+
+-a	--author	Set author name in config. Default is the computer user name.
+			Write 'user' to revert back to default author name.
+
+
+	--settings	Opens the config file to change settings
+	--init		Opens an editor for changing the initialization text at the start of a new document
+	--about		About this program
+*	--uninstall	Uninstall plog by running uninstall script (log files not affected)
+*not yet implemented
