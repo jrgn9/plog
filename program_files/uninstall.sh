@@ -2,6 +2,9 @@
 
 # Script for uninstalling plog
 
+# Extract the home folder of the user who is logged in (since sudo makes $HOME to root)
+USER_HOME=$(getent passwd $(logname) | cut -d: -f6)
+
 # Checks if the user runs the install script as sudo
 if [ ! -w /usr/local/bin ]
 then
@@ -21,16 +24,16 @@ fi
 read -rp "Do you want to keep the backups? (y/n): " keep_backups
 if [ "$keep_backups" != "y" ]
 then
-    echo "Keeping backups in $HOME/.plog. Deleting all other plog files"
+    echo "Keeping backups in $USER_HOME/.plog. Deleting all other plog files"
 
     # Find and delete all fines in .plog directory except backups
-    find "$HOME/.plog" -mindepth 1 -maxdepth 1 -type d -name 'backup' -prune -o -exec rm -rf {} +
+    find "$USER_HOME/.plog" -mindepth 1 -maxdepth 1 -type d -name 'backup' -prune -o -exec rm -rf {} +
 
 else
     echo "Deleting all plog files including backups"
 
     # Delete entire .plog directory
-    rm -rf "$HOME/.plog"
+    rm -rf "$USER_HOME/.plog"
 fi
 
 # Remove plog from /usr/local/bin
