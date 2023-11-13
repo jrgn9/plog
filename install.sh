@@ -27,8 +27,8 @@ latest_release=$(curl -s "https://api.github.com/repos/$USER/$REPO/releases/late
 # Compare versions
 if [ "$latest_release" != "$current_version" ]
 then
-    echo "You are about to install version $current_version, but the latest release is $latest_release. Do you still want to continue? y/n"
-    read -r proceed_install
+    echo "You are about to install version $current_version, but the latest release is $latest_release. You can find the latest version at https://github.com/$USER/$REPO/releases"
+    read -rp "Do you still want to continue? (y/n): " proceed_install
     if [ "$proceed_install" != "y" ]
     then
         echo "Installation aborted"
@@ -49,6 +49,7 @@ fi
 
 echo "Moving program files to $HOME/.plog"
 mv program_files/* "$HOME/.plog/"
+cp README.md "$HOME/.plog/"
 
 echo "Giving plog the right permissions"
 chmod 755 plog
