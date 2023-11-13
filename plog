@@ -1,8 +1,13 @@
 #! /bin/bash
 
+# Path for the .plog folder with program files
+program_folder="/home/$USER/.plog"
+
 # Fetches settings from .config
-# REMEMBER TO CHANGE PATH WITH INSTALL AND ERROR HANDLE IF CONFIG CANNOT BE SOURCED
-source config
+source "$program_folder/config"
+
+# CREATE FALLBACK FOR CONFIG??
+# REMOVE THE BACKUP STUFF AND MOVE IT TO .plog/backup
 
 # Finds current directory
 current_directory="$(pwd)"
@@ -12,88 +17,83 @@ current_directory="$(pwd)"
 if [ "$1" = "--help" ] || [ "$1" = "-h" ]
 then
 	# Prints help message and exits
-	# FIX PATH FOR THIS AFTER INSTALLER
-	cat help.txt
+	cat "$program_folder/help.txt"
 	exit 0
 
 # ABOUT FLAG
 elif [ "$1" = "--about" ]
 then
-	# FIX PATH FOR THIS AFTER INSTALLER
-	cat about.txt
+	cat "$program_folder/about.txt"
 	exit 0
 
 # SETTINGS FLAG
 elif [ "$1" = "--settings" ]
 then
 	# Opens config file in default text editor
-	# FIX PATH AFTER INSTALLER
-	"$text_editor" config
+	"$text_editor" "$program_folder/config"
 	exit 0
 
 # INIT FLAG
 elif [ "$1" = "--init" ]
 then
 	# Opens init file in default text editor
-	# FIX PATH AFTER INSTALLER
-	"$text_editor" init.txt
+	"$text_editor" "$program_folder/init.txt"
 	exit 0
 
 # UNINSTALL FLAG
 elif [ "$1" = "--uninstall" ]
 then
-	echo "An uninstall script will run when this is done"
+	# Run the uninstall script with sudo
+	sudo "$program_folder/uninstall.sh"
 	exit 0
 fi
 
 ## ERROR HANDLING FOR LOGS
 # Finds all .log files except backup.log
-### In the bin file I need to use pwd to find current directory for it to be right
-logs=$(find "$current_directory" -name "*.log" -not -name "*.backup.log")
+logs=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
 
 # Counts the number of files found
 file_count=$(echo "$logs" | wc -l)
 	
-# Error handling if there are multiple .log files
+# Error handling if there are multiple .plog files
 if [ "$file_count" -gt 1 ]
 then
 	# Multiple files found, display error and quit
 	echo "Error: Multiple log files found."
-	echo "plog can only handle one .log file in current directory"
-	echo "Please ensure that there is only one other .log file besides backup.log"
+	echo "plog can only handle one .plog file in current directory"
+	echo "Please ensure that there is only one other .plog file besides backup.plog"
 	exit 1
 
 elif [ -z "$logs" ]
 # Error handling If there are no log files
 then
 	# Prompts user for file name
-	echo -e "No log file detected \nDo you want to add a new log file? y/n"
+	echo -e "No log file detected \nDo you want to add a new log file? (y/n): "
 	read -r answer
 
 	if [ "$answer" = "y" ] || [ "$answer" = "Y" ] || [ "$answer" = "yes" ]
 	then
-		echo "Enter name for new log file (default: p.log)"
+		echo "Enter name for new log file (default: log.plog)"
 		read -r filename
 	
-		# If no name is entered, default is p
+		# If no name is entered, default is log
 		if [ -z "$filename" ]
 		then
-			filename=p
+			filename=log
 		fi
-	
 		# Prints filename and creates file
-		echo "Creating file $filename.log in current directory"
-		touch "$filename.log"
+		echo "Creating file $filename.plog in current directory"
+		touch "$filename.plog"
 
 		read -rp "Enter title for the document: " title
 
 		# Adds the init message and title to the log file
 		{
-			cat ./init.txt
+			cat "$program_folder/init.txt"
 			echo -e "---START OF LOG---\n"
 			echo -e "$title"
 			echo -e "\n~~~~~~"
-		} > "$filename.log"
+		} > "$filename.plog"
 		
 	else
 		echo "No log file created"
@@ -102,8 +102,7 @@ then
 fi
 
 ## Set logfile to be the file found in current directory
-### In the bin file I need to use pwd to find current directory for it to be right
-logfile=$(find "$current_directory" -name "*.log" -not -name "*.backup.log")
+logfile=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
 
 
 # ADD ENTRY ID
@@ -207,12 +206,11 @@ extract_entries() {
 if [ "$1" = "--delete" ] || [ "$1" = "-d" ]
 then
 	# Creates a backup before deleting entries
-	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
-	cp "$logfile" "$logfile".backup.log
+	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.plog
+	cp "$logfile" "$logfile".backup
 
-	# REMEMBER: CHANGE PATH AFTER INSTALLER!!!!!
 	# Counts the length of the init message
-	init_length=$(wc -l < init.txt)
+	init_length=$(wc -l < "$program_folder/init.txt")
 
 	# Add 5 lines to account for log title and delimiters
 	empty_length=$((init_length + 5))
@@ -226,9 +224,8 @@ then
 		if [ -z "$2" ]
 		then
 			# Invokes the program recursively if the user haven't provided a second argument
-			read -rp "Do you want to delete by id or the last entry? (id/last):" answer
-			# THIS NEEDS TO BE UPDATED WHEN THE PROGRAM IS FINNISHED!
-			"./plog.sh" -d "$answer"
+			read -rp "Do you want to delete by id or the last entry? (id/last): " answer
+			plog -d "$answer"
 
 		elif [ "$2" = "last" ]
 		then
@@ -237,7 +234,6 @@ then
 
 			# Use extract_entries function to redirect everything but last entry to tmpfile
 			extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile
-		
 		elif [ "$2" = "id" ] || [ "$2" = "ID" ]
 		then
 			# Checks if id is provided as argument
@@ -291,12 +287,10 @@ then
 			elif [ "$deleteid_start" = "$deleteid_end" ]
 				then
 					echo "You are about to delete entry #$deleteid_start"
-
 			else
 				# Else there is a range
 				echo "You are about to delete entry number from $deleteid_start to $deleteid_end"
 			fi
-			
 			read -rp "Are you sure you want to delete? (y/n): " answer
 
 			# If the user confirms the deletion
@@ -310,7 +304,6 @@ then
 				rm -f tmpfile
 				exit 1
 			fi
-
 		else
 			# Delete confirmation is turned off in config
 			# Overwrites the extracted entries to the logfile
@@ -327,7 +320,6 @@ then
 			elif [ "$deleteid_start" = "$deleteid_end" ]
 				then
 					echo "Entry #$deleteid_start deleted"
-
 			else
 				echo "Entry number from $deleteid_start to $deleteid_end deleted"
 			fi
@@ -344,10 +336,8 @@ then
 			else
 				echo "Could not delete from entry number $deleteid_start to $deleteid_end"
 			fi
-
 			exit 1
 		fi
-
 		exit 0
 	fi
 
@@ -356,7 +346,7 @@ elif [ "$1" = "--restore" ] || [ "$1" = "-r" ]
 then
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
-	mv "$logfile".backup.log "$logfile"
+	mv "$logfile".backup "$logfile"
 	echo "Backup is restored to $logfile"
 	exit 0
 
@@ -376,20 +366,17 @@ then
 	then
 		sed -i "s/author=.*/author=\$(whoami)/" config
 		
-		# REMEMBER TO CHANGE PATH AFTER INSTALL!!
-		source config
+		source "$program_folder/config"
 		
 		echo "Author successfully reverted to computer user name: $author"
-		
 		exit 0
 	fi
 	
 	# Update author in the .config file
-	sed -i "s/author=.*/author=\"$author\"/" config
+	sed -i "s/author=.*/author=\"$author\"/" "$program_folder/config"
 
 	# Source the updated .config file
-	# REMEMBER TO CHANGE PATH AFTER INSTALL!!
-	source config
+	source "$program_folder/config"
 	
 	# Author successfully added
 	echo "Author: $author saved in config"
@@ -404,7 +391,6 @@ then
 	then
 		filename="$2"
 	else
-	
 		echo "Enter the file name or relative path of the file to import (default: $current_directory/):"
 		read -r filename
 	fi
@@ -439,7 +425,7 @@ elif [ "$1" = "--edit" ] || [ "$1" = "-e" ]
 then
 	# Creates a backup before editing entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
-	cp "$logfile" "$logfile".backup.log
+	cp "$logfile" "$logfile".backup
 
 	# Edit warning for the user (can be turned off in settings)
 	if [ "$edit_warning" = "on" ]
@@ -498,9 +484,7 @@ then
 				editid_end="$4"
 			else
 				editid_end="$editid_start"
-
 			fi
-
 		else
 			# No third argument, prompts user for id
 			echo "Edit by id"
@@ -589,7 +573,6 @@ then
 
 				# Extract entries after the edit date and append them to tmpfile2
 				extract_entries "$editdate_start" "$editdate_end" "after" >> tmpfile2
-			
 			elif [ -n "$editid_start" ]
 			then
 				# Extract entries before the entry id and append them to tmpfile2
@@ -600,7 +583,6 @@ then
 
 				# Extract entries after the entry id and append them to tmpfile2
 				extract_entries "$editid_start" "$editid_end" "after" >> tmpfile2
-
 			else
 				# Edit last entry, since there are no editid or editdate
 
@@ -613,9 +595,7 @@ then
 
 			# Moves tmpfile2 back to the log file, overwriting it
 			mv tmpfile2 "$logfile"
-
 			echo "Changes saved."
-
 		else
 			echo "No changes were saved."
 		fi
@@ -628,9 +608,7 @@ else
 	rm tmpfile
 	exit 1
 fi
-
 exit 0
-
 
 # PRINT FLAG
 elif [ "$1" = "--print" ] || [ "$1" = "-p" ]
@@ -680,7 +658,6 @@ then
 			rm tmpfile
 			exit 1
 		fi
-
 	elif [ "$2" = "id" ] || [ "$2" = "ID" ]
 	then
 		# If the print by id argument is added
@@ -727,7 +704,6 @@ then
 			echo "No entries found matching the entry number."
 			exit 1
 		fi
-
 		exit 0
 
 	elif [ "$2" = "search" ]
@@ -798,7 +774,7 @@ elif [ "$1" = "--msg" ] || [ "$1" = "-m" ]
 then	
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f "$logfile".backup.log
+	rm -f "$logfile".backup
 	
 	# Checks if the message is empty or not present
 	if [ -z "$2" ] || [ "$2" = "" ]
@@ -812,7 +788,6 @@ then
 		echo "Error: Message should be enclosed in single or double quotes"
 		exit 1
 	fi
-
 	entry="$2"	
 else
 	# NO FLAGS
@@ -827,7 +802,7 @@ else
 	# No flags detected
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f "$logfile".backup.log
+	rm -f "$logfile".backup
 
 	# Creates a temporary file for log entry
 	tmpfile=$(mktemp)
