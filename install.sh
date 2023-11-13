@@ -29,13 +29,29 @@ if [ "$latest_release" != "$current_version" ]
 then
     echo "You are about to install version $current_version, but the latest release is $latest_release. Do you still want to continue? y/n"
     read -r proceed_install
+    if [ "$proceed_install" != "y" ]
+    then
+        echo "Installation aborted"
+        exit 1
+    fi
 else
     echo "You are installing the latest version: $current_version"
 fi
 
-# Proceeds to the install process if the user has latest version or answered yes to install old version
-if [ "$proceed_install" = "y" ] || [ -z "$proceed_install" ]
+# Proceeds to the install process 
+if [ -d "$HOME/.plog" ]
 then
-    echo ""
-    
+    echo ".plog directory already exists. All existing program files, including settings, will be overwritten. Backups will not be affected"
+else
+    echo "Creating .plog directory for program files in $HOME"
+    mkdir "$HOME/.plog"
 fi
+
+echo "Moving program files to $HOME/.plog"
+mv program_files/* "$HOME/.plog/"
+
+echo "Giving plog the right permissions"
+chmod 755 plog
+
+echo "Moving plog program to /usr/local/bin. Older versions of the program will be overwritten"
+mv plog /usr/local/bin
