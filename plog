@@ -43,6 +43,11 @@ then
 # UNINSTALL FLAG
 elif [ "$1" = "--uninstall" ]
 then
+	echo "You are about to uninstall plog. All your .plog files will not be affected. You can choose if you want to keep backups"
+
+	# Changing rights to the uninstall script
+	sudo chmod 755 "$program_folder/uninstall.sh"
+
 	# Run the uninstall script with sudo
 	sudo "$program_folder/uninstall.sh"
 	exit 0
@@ -364,7 +369,7 @@ then
 	
 	elif [ "$author" = "user" ] || [ "$author" = "User" ]
 	then
-		sed -i "s/author=.*/author=\$(whoami)/" config
+		sed -i "s/author=.*/author=\$(whoami)/" "$program_folder/config"
 		
 		source "$program_folder/config"
 		
