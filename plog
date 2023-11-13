@@ -231,6 +231,7 @@ then
 			# Invokes the program recursively if the user haven't provided a second argument
 			read -rp "Do you want to delete by id or the last entry? (id/last): " answer
 			plog -d "$answer"
+			exit 0
 
 		elif [ "$2" = "last" ]
 		then
