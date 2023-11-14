@@ -242,6 +242,8 @@ then
 			extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile
 		elif [ "$2" = "id" ] || [ "$2" = "ID" ]
 		then
+			# SHOULD CREATE A CHECK FOR POSITIVE INTEGERS
+
 			# Checks if id is provided as argument
 			if [ -n "$3" ]
 			then
@@ -251,7 +253,14 @@ then
 				# if there is a fourth argument, sets deleteid_end to fourth argument, otherwise sets to deleteid_start
 				if [ -n "$4" ]
 				then
-					deleteid_end="$4"
+					# Checks to see if the user has written ids in descending order and flips them
+					if [ "$4" -lt "$deleteid_start" ]
+					then
+						deleteid_end="$deleteid_start"
+						deleteid_start="$4"
+					else
+						deleteid_end="$4"
+					fi
 				else
 					deleteid_end="$deleteid_start"
 				fi
@@ -278,6 +287,9 @@ then
 			# Uses the extract_entries function to extract all the entries before and after the entries to delete
 			extract_entries "$deleteid_start" "$deleteid_end" "before" > tmpfile
 			extract_entries "$deleteid_start" "$deleteid_end" "after" >> tmpfile
+		else
+			echo "Wrong delete argument. Use -h for help"
+			exit 1
 		fi
 
 		# If the delete confirmation is still on in config, prompt the user if it is sure
@@ -478,6 +490,8 @@ then
 	elif [ "$2" = "id"  ] || [ "$2" = "ID" ]
 	then
 		# Edit by id argument
+
+		# SHOULD DO A CHECK FOR POSITIVE INTEGERS
 
 		# Checks if there is an id provided as argument
 		if [ -n "$3" ]
