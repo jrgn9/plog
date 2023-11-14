@@ -1,4 +1,4 @@
-*.log
+*.plog
 plog.txt
 README.md.backup
 .vscode

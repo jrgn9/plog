@@ -1,8 +1,8 @@
 plog is a command line tool for creating project logs.
-If a .log file does not exist then one will be created in current directory.
-Default name is p.log
+If a .plog file does not exist then one will be created in current directory.
+Default name is log.plog
 
-NOTE: There cannot be more than one .log file per directory!
+NOTE: There cannot be more than one .plog file per directory!
 
 Usage:	plog [option] [optional second argument]
 
@@ -52,5 +52,4 @@ Options:
 	--settings	Opens the config file to change settings
 	--init		Opens an editor for changing the initialization text at the start of a new document
 	--about		About this program
-*	--uninstall	Uninstall plog by running uninstall script (log files not affected)
-*not yet implemented
+	--uninstall	Uninstall plog by running uninstall script (log files not affected)
