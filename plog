@@ -405,6 +405,7 @@ restore_log() {
 	exit 0
 }
 
+# Change author function
 change_author() {
 	# Checks if user provided author name as argument
 	if [ -e "$2" ]
@@ -443,11 +444,8 @@ change_author() {
 	exit 0
 }
 
-
-
-# IMPORT FLAG
-elif [ "$1" = "--import" ] || [ "$1" = "-i" ]
-then
+# Import file function
+import_file() {
 	# Checks if user has provided file as argument to skip being prompted
 	if [ -e "$2" ]
 	then
@@ -481,10 +479,10 @@ then
 		rm tmpfile
 		exit 1
 	fi
+}
 
-# EDIT FLAG
-elif [ "$1" = "--edit" ] || [ "$1" = "-e" ]
-then
+# Edit entry function
+edit_entries() {
 	# Creates a backup before editing entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" "$logfile".backup
@@ -497,102 +495,96 @@ then
 		sleep 3
 	fi
 
-	# Edit arguments
-	if [ "$2" = "date" ]
-	then
-		# Edit by date argument
-		
-		# Checks if there is a date provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets editdate to be third argument
-			editdate_start="$3"
-			if [ -n "$4" ]
+	case $2 in
+		date)
+			# Edit by date argument. 
+			# Checks if there is a date provided as argument
+			if [ -n "$3" ]
 			then
 				# Sets editdate to be third argument
-				editdate_end="$4"
+				editdate_start="$3"
+				if [ -n "$4" ]
+				then
+					# Sets editdate to be third argument
+					editdate_end="$4"
+				else
+					editdate_end="$editdate_start"
+				fi
 			else
-				editdate_end="$editdate_start"
+				# No third argument, prompts user for date
+				echo "Edit by date"
+				echo "Enter one date or two dates separated by space for a date range (optional)"
+				read -rp "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
+
+				if [ -z "$editdate_end" ]
+				then
+					editdate_end="$editdate_start"
+				fi
 			fi
-		else
-			# No third argument, prompts user for date
-			echo "Edit by date"
-			echo "Enter one date or two dates separated by space for a date range (optional)"
-			read -rp "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
-
-			if [ -z "$editdate_end" ]
+			# Awk sentence that redirects all matching dates to a tempfile
+			extract_entries "$editdate_start" "$editdate_end" "between" > tmpfile
+			
+			# Store the original content in a variable before editing
+			original_entries=$(extract_entries "$editdate_start" "$editdate_end" "between")
+			;;
+		id|ID)
+			# Edit by id argument
+			# Checks if there is an id provided as argument
+			if [ -n "$3" ]
 			then
-				editdate_end="$editdate_start"
-			fi
-		fi
-		# Awk sentence that redirects all matching dates to a tempfile
-		extract_entries "$editdate_start" "$editdate_end" "between" > tmpfile
-		
-		# Store the original content in a variable before editing
-		original_entries=$(extract_entries "$editdate_start" "$editdate_end" "between")
+				# Sets editid to be third argument
+				editid_start="$3"
 
-	elif [ "$2" = "id"  ] || [ "$2" = "ID" ]
-	then
-		# Edit by id argument
-
-		# SHOULD DO A CHECK FOR POSITIVE INTEGERS
-
-		# Checks if there is an id provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets editid to be third argument
-			editid_start="$3"
-
-			if [ -n "$4" ]
-			then
-				editid_end="$4"
+				if [ -n "$4" ]
+				then
+					editid_end="$4"
+				else
+					editid_end="$editid_start"
+				fi
 			else
-				editid_end="$editid_start"
+				# No third argument, prompts user for id
+				echo "Edit by id"
+				echo "Enter one entry number or two numbers separated by space for id range (optional)"
+				read -rp "Enter entry number id: " editid_start editid_end
+
+				if [ -z "$editid_end" ]
+				then
+					editid_end="$editid_start"
+				fi
 			fi
-		else
-			# No third argument, prompts user for id
-			echo "Edit by id"
-			echo "Enter one entry number or two numbers separated by space for id range (optional)"
-			read -rp "Enter entry number id: " editid_start editid_end
 
-			if [ -z "$editid_end" ]
-			then
-				editid_end="$editid_start"
-			fi
-		fi
+			# Awk sentence that redirects all matching ids to a tempfile
+			extract_entries "$editid_start" "$editid_end" "between" > tmpfile
 
-		# Awk sentence that redirects all matching ids to a tempfile
-		extract_entries "$editid_start" "$editid_end" "between" > tmpfile
+			# Store the original content in a variable before editing
+			original_entries=$(extract_entries "$editid_start" "$editid_end" "between")
+			;;
+		last)
+			# Edit last entry
+			echo "Edit last entry"
 
-		# Store the original content in a variable before editing
-		original_entries=$(extract_entries "$editid_start" "$editid_end" "between")
+			# awk sentence to extract the last entry number
+			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
 
-	elif [ "$2" = "last" ]
-	then
-		# Edit last entry
-		echo "Edit last entry"
+			# Use extract_entries function to redirect the last entry to tmpfile
+			extract_entries "$last_entry_id" "$last_entry_id" "between" > tmpfile
 
-		# awk sentence to extract the last entry number
-		last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
-
-		# Use extract_entries function to redirect the last entry to tmpfile
-		extract_entries "$last_entry_id" "$last_entry_id" "between" > tmpfile
-
-    	# Store the original content in a variable before editing
-		original_entries=$(extract_entries "$last_entry_id" "$last_entry_id" "between")
-
-	else
-		# No arguments
+			# Store the original content in a variable before editing
+			original_entries=$(extract_entries "$last_entry_id" "$last_entry_id" "between")
+			;;
+		*)
+			# No arguments
 		
-		### Should i bother error handling???
+			### Should i bother error handling???
 
-		# Opens the log file with the default editor
-		"$text_editor" "$logfile"
+			# Opens the log file with the default editor
+			"$text_editor" "$logfile"
 
-		### Check if there was any changes and print message accordingly
+			### Check if there was any changes and print message accordingly?
 
-		exit 0
-	fi
+			exit 0
+			;;
+	esac
 
 	# If there is content in the tempfile from date, id or last, open it in the editor
 	if [ -s "tmpfile" ]
@@ -664,15 +656,17 @@ then
 			echo "No changes were saved."
 		fi
 		
-	# Remove the temporary file
-	rm tmpfile
-else
-	# If there are no entries found for the provided date, display a message		
-	echo "No entries found for the provided search parameter. Check if you have used the correct date format or id number."
-	rm tmpfile
-	exit 1
-fi
-exit 0
+		# Remove the temporary file
+		rm tmpfile
+	else
+		# If there are no entries found for the provided date, display a message		
+		echo "No entries found for the provided search parameter. Check if you have used the correct date format or id number."
+		rm tmpfile
+		exit 1
+	fi
+
+	exit 0
+}
 
 # PRINT FLAG
 elif [ "$1" = "--print" ] || [ "$1" = "-p" ]
