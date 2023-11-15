@@ -12,46 +12,39 @@ source "$program_folder/config"
 # Finds current directory
 current_directory="$(pwd)"
 
-## CHECKS FOR META FLAGS
-# HELP FLAG
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]
-then
-	# Prints help message and exits
-	cat "$program_folder/help.txt"
-	exit 0
+## Case check for meta flags
+case $1 in
+    --help|-h)
+		# Prints help message and exits
+		cat "$program_folder/help.txt"
+		exit 0
+        ;;
+    --about)
+		# Prints about text and exits
+		cat "$program_folder/about.txt"
+		exit 0
+        ;;
+    --settings)
+		# Opens config file in default text editor
+		"$text_editor" "$program_folder/config"
+		exit 0
+        ;;
+    --init)
+		# Opens init file in default text editor
+		"$text_editor" "$program_folder/init.txt"
+		exit 0
+        ;;
+    --uninstall)
+		echo "You are about to uninstall plog. All your .plog files will not be affected. You can choose if you want to keep backups"
 
-# ABOUT FLAG
-elif [ "$1" = "--about" ]
-then
-	cat "$program_folder/about.txt"
-	exit 0
+		# Changing rights to the uninstall script
+		sudo chmod 755 "$program_folder/uninstall.sh"
 
-# SETTINGS FLAG
-elif [ "$1" = "--settings" ]
-then
-	# Opens config file in default text editor
-	"$text_editor" "$program_folder/config"
-	exit 0
-
-# INIT FLAG
-elif [ "$1" = "--init" ]
-then
-	# Opens init file in default text editor
-	"$text_editor" "$program_folder/init.txt"
-	exit 0
-
-# UNINSTALL FLAG
-elif [ "$1" = "--uninstall" ]
-then
-	echo "You are about to uninstall plog. All your .plog files will not be affected. You can choose if you want to keep backups"
-
-	# Changing rights to the uninstall script
-	sudo chmod 755 "$program_folder/uninstall.sh"
-
-	# Run the uninstall script with sudo
-	sudo "$program_folder/uninstall.sh"
-	exit 0
-fi
+		# Run the uninstall script with sudo
+		sudo "$program_folder/uninstall.sh"
+		exit 0
+		;;
+esac
 
 ## ERROR HANDLING FOR LOGS
 # Finds all .log files except backup.log
@@ -123,6 +116,34 @@ else
 	# If there are no last entry number, entry number is 1
 	entry_number=1
 fi
+
+## Case check for functionality flags
+case $2 in
+    --delete|-d)
+        delete_entry "$@"
+        ;;
+    --restore|-r)
+        restore_log "$@"
+        ;;
+    --author|-a)
+        change_author "$@"
+        ;;
+    --import|-i)
+        import_file "$@"
+        ;;
+    --edit|-e)
+        edit_entries "$@"
+        ;;
+    --print|-p)
+        print_entries "$@"
+        ;;
+    --msg|-m)
+        short_entry "$@"
+        ;;
+    *)
+        add_entry "$@"
+        ;;
+esac
 
 # Function to extract entries from the log file based on a cutoff (date/ID) and position
 extract_entries() {
@@ -204,6 +225,7 @@ extract_entries() {
 		}
 	' "$logfile"
 }
+
 
 ## FLAG CHECKS
 
