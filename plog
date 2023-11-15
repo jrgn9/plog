@@ -405,15 +405,17 @@ restore_log() {
 	exit 0
 }
 
+change_author() {
+	# Checks if user provided author name as argument
+	if [ -e "$2" ]
+	then
+		author="$2"
+	else
+		# Prompt user for name
+		read -rp "Enter author name: " author
+	fi
 
-
-# CHANGE AUTHOR FLAG
-elif [ "$1" = "--author" ] || [ "$1" = "-a" ]
-then
-	# Prompt user for name
-	read -rp "Enter author name: " author
-	
-	# Checks if user provided author name
+	# Checks if user provided author name or provided user to change to username
 	if [ -z "$author" ]
 	then
 		echo "Error: No author name provided. Author not changed"
@@ -428,7 +430,7 @@ then
 		echo "Author successfully reverted to computer user name: $author"
 		exit 0
 	fi
-	
+
 	# Update author in the .config file
 	sed -i "s/author=.*/author=\"$author\"/" "$program_folder/config"
 
@@ -439,6 +441,9 @@ then
 	echo "Author: $author saved in config"
 	echo "To edit author use plog --author or edit the .config file manually"
 	exit 0
+}
+
+
 
 # IMPORT FLAG
 elif [ "$1" = "--import" ] || [ "$1" = "-i" ]
