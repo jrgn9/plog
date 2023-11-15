@@ -834,11 +834,8 @@ print_entries() {
 	esac
 }
 
-
-
-# SHORT MESSAGE FLAG
-elif [ "$1" = "--msg" ] || [ "$1" = "-m" ]
-then	
+# Function for adding short entry message directly
+short_entry() {
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f "$logfile".backup
@@ -856,6 +853,9 @@ then
 		exit 1
 	fi
 	entry="$2"	
+}
+
+
 else
 	# NO FLAGS
 
