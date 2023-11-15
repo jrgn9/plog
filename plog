@@ -102,21 +102,6 @@ fi
 ## Set logfile to be the file found in current directory
 logfile=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
 
-
-# ADD ENTRY ID
-# Uses grep and awk to search for last entry number. Extracts number from # and sorts the numbers
-last_entry_number=$(grep -o "Entry #[0-9]*" "$logfile" | awk -F '#' '{print $NF}' | sort -n | tail -n 1)
-
-# If there is a last entry number
-if [ -n "$last_entry_number" ]
-then
-	# New entry number is last + 1
-	entry_number=$((last_entry_number + 1))
-else
-	# If there are no last entry number, entry number is 1
-	entry_number=1
-fi
-
 # Function to check if an argument is a negative integer
 is_negative_int() {
 	[[ $1 =~ ^-[0-9]+$ ]]
@@ -890,6 +875,20 @@ add_entry() {
 }
 
 # ADD ENTRY TO LOG FILE
+
+# Add entry id
+# Uses grep and awk to search for last entry number. Extracts number from # and sorts the numbers
+last_entry_number=$(grep -o "Entry #[0-9]*" "$logfile" | awk -F '#' '{print $NF}' | sort -n | tail -n 1)
+
+# If there is a last entry number
+if [ -n "$last_entry_number" ]
+then
+	# New entry number is last + 1
+	entry_number=$((last_entry_number + 1))
+else
+	# If there are no last entry number, entry number is 1
+	entry_number=1
+fi
 
 # Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
 timestamp=$(date --rfc-3339=s)
