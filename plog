@@ -69,7 +69,7 @@ then
 	echo -e "No log file detected \nDo you want to add a new log file? (y/n): "
 	read -r answer
 
-	if [ "$answer" = "y" ] || [ "$answer" = "Y" ] || [ "$answer" = "yes" ]
+	if [[ "$answer" =~ ^[Yy](es)?$ ]]
 	then
 		echo "Enter name for new log file (default: log.plog)"
 		read -r filename
@@ -332,7 +332,7 @@ delete_entry() {
 		read -rp "Are you sure you want to delete? (y/n): " answer
 
 		# If the user confirms the deletion
-		if [ "$answer" = "y" ] || [ "$answer" = "Y" ]
+		if [[ "$answer" =~ ^[Yy](es)?$ ]]
 		then
 			# Overwrites the extracted entries to the logfile
 			mv tmpfile "$logfile"
@@ -407,7 +407,7 @@ change_author() {
 		echo "Error: No author name provided. Author not changed"
 		exit 1
 	
-	elif [ "$author" = "user" ] || [ "$author" = "User" ]
+	elif [[ "$author" =~ ^[Uu]ser$ ]]
 	then
 		sed -i "s/author=.*/author=\$(whoami)/" "$program_folder/config"
 		
@@ -602,7 +602,7 @@ edit_entries() {
 
 		# Continues to overwrite changes if there are no errors 
 		# or the user wants to continue anyways
-		if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
+		if [ "$edit_error" != "1" ] || [[ "$error_answer" =~ ^[Yy](es)?$ ]]
 		then
 			if [ -n "$editdate_start" ]
 			then
