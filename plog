@@ -210,6 +210,7 @@ delete_entry() {
 	# Creates a backup before deleting entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.plog
 	cp "$logfile" "$logfile".backup
+	echo "Creating copy of $logfile as $logfile.backup" # DEBUG
 
 	# Counts the length of the init message
 	init_length=$(wc -l < "$program_folder/init.txt")
@@ -363,6 +364,7 @@ restore_log() {
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	mv "$logfile".backup "$logfile"
+	echo "backing up copy of $logfile from $logfile.backup" # DEBUG
 	echo "Backup is restored to $logfile"
 	exit 0
 }
@@ -448,6 +450,7 @@ edit_entries() {
 	# Creates a backup before editing entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	cp "$logfile" "$logfile".backup
+	echo "Creating copy of $logfile as $logfile.backup" # DEBUG
 
 	# Edit warning for the user (can be turned off in settings)
 	if [ "$edit_warning" = "on" ]
@@ -556,6 +559,9 @@ edit_entries() {
     
 		# Get the edited entries from the tmp file and adds in the delimiter
 		edited_entries=$(cat "tmpfile")
+
+		# Trim any trailing delimiters from edited_entries
+		#edited_entries=$(echo "$edited_entries" | sed '/^~~~~~~$/d')
 
 		# Checks number of entries before and after editing
 		num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
@@ -801,6 +807,7 @@ short_entry() {
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f "$logfile".backup
+	echo "Removing copy of $logfile named $logfile.backup" # DEBUG
 	
 	# Checks if the message is empty or not present
 	if [ -z "$2" ] || [ "$2" = "" ]
@@ -830,6 +837,7 @@ add_entry() {
 	# Removes backup if there is one from previously deleting last entry
 	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
 	rm -f "$logfile".backup
+	echo "Removing copy of $logfile named $logfile.backup" # DEBUG
 
 	# Creates a temporary file for log entry
 	tmpfile=$(mktemp)
