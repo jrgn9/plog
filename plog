@@ -117,6 +117,21 @@ else
 	entry_number=1
 fi
 
+# Function to check if an argument is a negative integer
+is_negative_int() {
+	[[ $1 =~ ^-[0-9]+$ ]]
+}
+
+# Loop through all arguments to check for negative integers
+for arg in "$@"
+do
+	if is_negative_int "$arg"
+	then
+		echo "Invalid input: Negative integers are not allowed"
+		exit 1
+	fi
+done
+
 ## Case check for functionality flags
 case $1 in
     --delete|-d)
@@ -226,54 +241,10 @@ extract_entries() {
 	' "$logfile"
 }
 
-# Function to check if an argument is a negative integer
-is_negative_int() {
-	[[ $1 =~ ^-[0-9]+$ ]]
-}
+# Functions for the different functionalities
 
-# Loop through all arguments to check for negative integers
-for arg in "$@"
-do
-	if is_negative_int "$arg"
-	then
-		echo "Invalid input: Negative integers are not allowed"
-		exit 1
-	fi
-done
-
-case $1 in
-    --delete|-d)
-        delete_entry "$@"
-        ;;
-    --restore|-r)
-        restore_log
-        ;;
-    --author|-a)
-        change_author "$@"
-        ;;
-    --import|-i)
-        import_file "$@"
-        ;;
-    --edit|-e)
-        edit_entries "$@"
-        ;;
-    --print|-p)
-        print_entries "$@"
-        ;;
-    --msg|-m)
-        short_entry "$@"
-        ;;
-    *)
-        add_entry "$@"
-        ;;
-esac
-
-
-## FLAG CHECKS
-
-# DELETE ENTRY FLAG
-if [ "$1" = "--delete" ] || [ "$1" = "-d" ]
-then
+# Delete entry function
+delete_entry() {
 	# Creates a backup before deleting entries
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.plog
 	cp "$logfile" "$logfile".backup
@@ -289,25 +260,18 @@ then
 	then
 		echo "There are no entries to delete"
 		exit 1
-	else
-		if [ -z "$2" ]
-		then
-			# Invokes the program recursively if the user haven't provided a second argument
-			read -rp "Do you want to delete by id or the last entry? (id/last): " answer
-			plog -d "$answer"
-			exit 0
+	fi
 
-		elif [ "$2" = "last" ]
-		then
+	# Case to check for second argument
+	case $2 in
+		last)
 			# awk sentence to extract the last entry number
 			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
 
 			# Use extract_entries function to redirect everything but last entry to tmpfile
 			extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile
-		elif [ "$2" = "id" ] || [ "$2" = "ID" ]
-		then
-			# SHOULD CREATE A CHECK FOR POSITIVE INTEGERS
-
+			;;
+		id)
 			# Checks if id is provided as argument
 			if [ -n "$3" ]
 			then
@@ -317,19 +281,22 @@ then
 				# if there is a fourth argument, sets deleteid_end to fourth argument, otherwise sets to deleteid_start
 				if [ -n "$4" ]
 				then
-					# Checks to see if the user has written ids in descending order and flips them
+					# Checks to see order of ids
 					if [ "$4" -lt "$deleteid_start" ]
 					then
+						# arguments are provided in descending order, flips them to ascending
 						deleteid_end="$deleteid_start"
 						deleteid_start="$4"
 					else
+						# arguments are provided in ascending order, fourth is id end
 						deleteid_end="$4"
 					fi
 				else
+					# No fourth argument, start and end is the same
 					deleteid_end="$deleteid_start"
 				fi
 			else
-				# Prompts the user for ids to delete
+				# No id provided, prompts the user for ids to delete
 				echo "Delete by entry number"
 				echo "Enter entry number to delete or two numbers separated by space for deleting a range of entries (range inclusive)"
 				read -rp "Enter entry number(s) to delete: " deleteid_start deleteid_end
@@ -351,77 +318,83 @@ then
 			# Uses the extract_entries function to extract all the entries before and after the entries to delete
 			extract_entries "$deleteid_start" "$deleteid_end" "before" > tmpfile
 			extract_entries "$deleteid_start" "$deleteid_end" "after" >> tmpfile
-		else
-			echo "Wrong delete argument. Use -h for help"
-			exit 1
-		fi
+			;;
+		*)
+			# Invokes the program recursively if the user haven't provided a second argument
+			read -rp "Do you want to delete by id or the last entry? (id/last): " answer
+			plog -d "$answer"
+			exit 0
+			;;
+	esac
 
-		# If the delete confirmation is still on in config, prompt the user if it is sure
-		if [ "$delete_confirmation" = "on" ]
+	# If the delete confirmation is still on in config, prompt the user if it is sure
+	if [ "$delete_confirmation" = "on" ]
+	then
+		# Checks for range, only one id or the last entry which are about to be deleted and prints message accordingly
+		# If there is no deleteid, it is the last entry
+		if [ -z "$deleteid_start" ]
 		then
-			# Checks for range, only one id or the last entry which are about to be deleted and prints message accordingly
-			# If there is no deleteid, it is the last entry
-			if [ -z "$deleteid_start" ]
-			then
-				echo "You are about to delete the last entry, entry #$last_entry_id"
+			echo "You are about to delete the last entry, entry #$last_entry_id"
 
-			# If start and end is the same, it is only one id
-			elif [ "$deleteid_start" = "$deleteid_end" ]
-				then
-					echo "You are about to delete entry #$deleteid_start"
-			else
-				# Else there is a range
-				echo "You are about to delete entry number from $deleteid_start to $deleteid_end"
-			fi
-			read -rp "Are you sure you want to delete? (y/n): " answer
-
-			# If the user confirms the deletion
-			if [ "$answer" = "y" ] || [ "$answer" = "Y" ]
+		# If start and end is the same, it is only one id
+		elif [ "$deleteid_start" = "$deleteid_end" ]
 			then
-				# Overwrites the extracted entries to the logfile
-				mv tmpfile "$logfile"
-			else
-				# User declines the deletion
-				echo "Delete operation aborted"
-				rm -f tmpfile
-				exit 1
-			fi
+				echo "You are about to delete entry #$deleteid_start"
 		else
-			# Delete confirmation is turned off in config
+			# Else there is a range
+			echo "You are about to delete entry number from $deleteid_start to $deleteid_end"
+		fi
+		read -rp "Are you sure you want to delete? (y/n): " answer
+
+		# If the user confirms the deletion
+		if [ "$answer" = "y" ] || [ "$answer" = "Y" ]
+		then
 			# Overwrites the extracted entries to the logfile
 			mv tmpfile "$logfile"
-		fi
-
-		# Check if the file was modified, which ids was used and prints message accordingly
-		if [[ $? -eq 0 ]]
-		then
-			if [ -z "$deleteid_start" ]
-			then
-				echo "Entry #$last_entry_id deleted"
-
-			elif [ "$deleteid_start" = "$deleteid_end" ]
-				then
-					echo "Entry #$deleteid_start deleted"
-			else
-				echo "Entry number from $deleteid_start to $deleteid_end deleted"
-			fi
 		else
-			# If the file was not modified, print error message
-			if [ -z "$deleteid_start" ]
-			then
-					echo "Could not delete last entry"
-
-			elif [ "$deleteid_start" = "$deleteid_end" ]
-			then
-				echo "Could not delete entry #$deleteid_start"
-
-			else
-				echo "Could not delete from entry number $deleteid_start to $deleteid_end"
-			fi
+			# User declines the deletion
+			echo "Delete operation aborted"
+			rm -f tmpfile
 			exit 1
 		fi
-		exit 0
+	else
+		# Delete confirmation is turned off in config
+		# Overwrites the extracted entries to the logfile
+		mv tmpfile "$logfile"
 	fi
+
+	# Check if the file was modified, which ids was used and prints message accordingly
+	if [[ $? -eq 0 ]]
+	then
+		if [ -z "$deleteid_start" ]
+		then
+			echo "Entry #$last_entry_id deleted"
+
+		elif [ "$deleteid_start" = "$deleteid_end" ]
+			then
+				echo "Entry #$deleteid_start deleted"
+		else
+			echo "Entry number from $deleteid_start to $deleteid_end deleted"
+		fi
+	else
+		# If the file was not modified, print error message
+		if [ -z "$deleteid_start" ]
+		then
+				echo "Could not delete last entry"
+
+		elif [ "$deleteid_start" = "$deleteid_end" ]
+		then
+			echo "Could not delete entry #$deleteid_start"
+
+		else
+			echo "Could not delete from entry number $deleteid_start to $deleteid_end"
+		fi
+		exit 1
+	fi
+	exit 0
+}
+
+
 
 # RESTORE TO BACKUP FLAG
 elif [ "$1" = "--restore" ] || [ "$1" = "-r" ]
