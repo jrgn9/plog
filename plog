@@ -118,7 +118,7 @@ else
 fi
 
 ## Case check for functionality flags
-case $2 in
+case $1 in
     --delete|-d)
         delete_entry "$@"
         ;;
@@ -240,6 +240,34 @@ do
 		exit 1
 	fi
 done
+
+case $1 in
+    --delete|-d)
+        delete_entry "$@"
+        ;;
+    --restore|-r)
+        restore_log
+        ;;
+    --author|-a)
+        change_author "$@"
+        ;;
+    --import|-i)
+        import_file "$@"
+        ;;
+    --edit|-e)
+        edit_entries "$@"
+        ;;
+    --print|-p)
+        print_entries "$@"
+        ;;
+    --msg|-m)
+        short_entry "$@"
+        ;;
+    *)
+        add_entry "$@"
+        ;;
+esac
+
 
 ## FLAG CHECKS
 
