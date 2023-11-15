@@ -122,34 +122,6 @@ do
 	fi
 done
 
-# Case check for functionality flags
-case $1 in
-    --delete|-d)
-        delete_entry "$@"
-        ;;
-    --restore|-r)
-        restore_log "$@"
-        ;;
-    --author|-a)
-        change_author "$@"
-        ;;
-    --import|-i)
-        import_file "$@"
-        ;;
-    --edit|-e)
-        edit_entries "$@"
-        ;;
-    --print|-p)
-        print_entries "$@"
-        ;;
-    --msg|-m)
-        short_entry "$@"
-        ;;
-    *)
-        add_entry "$@"
-        ;;
-esac
-
 # Function to extract entries from the log file based on a cutoff (date/ID) and position
 extract_entries() {
 	awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
@@ -879,6 +851,34 @@ add_entry() {
 	# Removes the temporary file
 	rm "$tmpfile"
 }
+
+# Case check for functionality flags
+case $1 in
+    --delete|-d)
+        delete_entry "$@"
+        ;;
+    --restore|-r)
+        restore_log "$@"
+        ;;
+    --author|-a)
+        change_author "$@"
+        ;;
+    --import|-i)
+        import_file "$@"
+        ;;
+    --edit|-e)
+        edit_entries "$@"
+        ;;
+    --print|-p)
+        print_entries "$@"
+        ;;
+    --msg|-m)
+        short_entry "$@"
+        ;;
+    *)
+        add_entry "$@"
+        ;;
+esac
 
 # ADD ENTRY TO LOG FILE
 
