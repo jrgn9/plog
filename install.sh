@@ -17,6 +17,8 @@ then
     exit 1
 fi
 
+# MAKE CURL OPTIONAL WITH WARNING THAT IT CAN'T CHECK VERSION WITHOUT IT
+
 # Check that the user has curl installed
 if ! command -v curl &> /dev/null
 then
