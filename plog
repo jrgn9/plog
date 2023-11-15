@@ -392,18 +392,20 @@ delete_entry() {
 		exit 1
 	fi
 	exit 0
+
 }
 
-
-
-# RESTORE TO BACKUP FLAG
-elif [ "$1" = "--restore" ] || [ "$1" = "-r" ]
-then
+# Restore log function
+# THIS WILL BE CHANGED WHEN BACKUP FUNCTIONALITY IS IN PLACE
+restore_log() {
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	mv "$logfile".backup "$logfile"
 	echo "Backup is restored to $logfile"
 	exit 0
+}
+
+
 
 # CHANGE AUTHOR FLAG
 elif [ "$1" = "--author" ] || [ "$1" = "-a" ]
