@@ -855,10 +855,7 @@ short_entry() {
 	entry="$2"	
 }
 
-
-else
-	# NO FLAGS
-
+add_entry() {
 	# Checks if there are no flags provided to ensure positional arguments
 	if [ -n "$2" ]
 	then
@@ -890,7 +887,7 @@ else
 
 	# Removes the temporary file
 	rm "$tmpfile"
-fi
+}
 
 # ADD ENTRY TO LOG FILE
 
