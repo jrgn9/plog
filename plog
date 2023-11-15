@@ -12,7 +12,7 @@ source "$program_folder/config"
 # Finds current directory
 current_directory="$(pwd)"
 
-## Case check for meta flags
+# Case check for meta flags
 case $1 in
     --help|-h)
 		# Prints help message and exits
@@ -46,61 +46,66 @@ case $1 in
 		;;
 esac
 
-## ERROR HANDLING FOR LOGS
-# Finds all .log files except backup.log
-logs=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
+# Function for checking if there are log present and if not creates one
+check_and_create_log() {
+	# Finds all .log files except backup.log
+	logs=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
 
-# Counts the number of files found
-file_count=$(echo "$logs" | wc -l)
-	
-# Error handling if there are multiple .plog files
-if [ "$file_count" -gt 1 ]
-then
-	# Multiple files found, display error and quit
-	echo "Error: Multiple log files found."
-	echo "plog can only handle one .plog file in current directory"
-	echo "Please ensure that there is only one other .plog file besides backup.plog"
-	exit 1
-
-elif [ -z "$logs" ]
-# Error handling If there are no log files
-then
-	# Prompts user for file name
-	echo -e "No log file detected \nDo you want to add a new log file? (y/n): "
-	read -r answer
-
-	if [[ "$answer" =~ ^[Yy](es)?$ ]]
-	then
-		echo "Enter name for new log file (default: log.plog)"
-		read -r filename
-	
-		# If no name is entered, default is log
-		if [ -z "$filename" ]
-		then
-			filename=log
-		fi
-		# Prints filename and creates file
-		echo "Creating file $filename.plog in current directory"
-		touch "$filename.plog"
-
-		read -rp "Enter title for the document: " title
-
-		# Adds the init message and title to the log file
-		{
-			cat "$program_folder/init.txt"
-			echo -e "---START OF LOG---\n"
-			echo -e "$title"
-			echo -e "\n~~~~~~"
-		} > "$filename.plog"
+	# Counts the number of files found
+	file_count=$(echo "$logs" | wc -l)
 		
-	else
-		echo "No log file created"
+	# Error handling if there are multiple .plog files
+	if [ "$file_count" -gt 1 ]
+	then
+		# Multiple files found, display error and quit
+		echo "Error: Multiple log files found."
+		echo "plog can only handle one .plog file in current directory"
+		echo "Please ensure that there is only one other .plog file besides backup.plog"
 		exit 1
-	fi
-fi
 
-## Set logfile to be the file found in current directory
-logfile=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
+	elif [ -z "$logs" ]
+	# Error handling If there are no log files
+	then
+		# Prompts user for file name
+		echo -e "No log file detected \nDo you want to add a new log file? (y/n): "
+		read -r answer
+
+		if [[ "$answer" =~ ^[Yy](es)?$ ]]
+		then
+			echo "Enter name for new log file (default: log.plog)"
+			read -r filename
+		
+			# If no name is entered, default is log
+			if [ -z "$filename" ]
+			then
+				filename=log
+			fi
+			# Prints filename and creates file
+			echo "Creating file $filename.plog in current directory"
+			touch "$filename.plog"
+
+			read -rp "Enter title for the document: " title
+
+			# Adds the init message and title to the log file
+			{
+				cat "$program_folder/init.txt"
+				echo -e "---START OF LOG---\n"
+				echo -e "$title"
+				echo -e "\n~~~~~~"
+			} > "$filename.plog"
+			
+		else
+			echo "No log file created"
+			exit 1
+		fi
+	fi
+
+	# Returns the logfile that is found after doing the check
+	find "$current_directory" -name "*.plog" -not -name "*.backup"
+}
+
+# Set logfile to be the file found in current directory
+logfile=$(check_and_create_log)
 
 # Function to check if an argument is a negative integer
 is_negative_int() {
@@ -117,7 +122,7 @@ do
 	fi
 done
 
-## Case check for functionality flags
+# Case check for functionality flags
 case $1 in
     --delete|-d)
         delete_entry "$@"
@@ -840,6 +845,7 @@ short_entry() {
 	entry="$2"	
 }
 
+# Function for adding entry by opening text editor (no flags invoked)
 add_entry() {
 	# Checks if there are no flags provided to ensure positional arguments
 	if [ -n "$2" ]
