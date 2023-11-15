@@ -668,164 +668,173 @@ edit_entries() {
 	exit 0
 }
 
-# PRINT FLAG
-elif [ "$1" = "--print" ] || [ "$1" = "-p" ]
-then
-	# Checks if there is a date flag for printing by date
-	if [ "$2" = "date" ]
-	then
-		# Checks if there is a date provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets printdate to be third argument
-			printdate_start="$3"
-
-			# If there is a fourth argument, sets printdate_end to fourth argument
-			if [ -n "$4" ]
+# Print entry function
+print_entries() {
+	case $2 in
+		date)
+			# Checks if there is a date provided as argument
+			if [ -n "$3" ]
 			then
-				printdate_end="$4"
+				# Sets printdate to be third argument
+				printdate_start="$3"
+
+				# If there is a fourth argument, sets printdate_end to fourth argument
+				if [ -n "$4" ]
+				then
+					printdate_end="$4"
+				else
+					# If there is no fourth argument, sets printdate_end to printdate_start
+					printdate_end="$printdate_start"
+				fi
+
 			else
-				# If there is no fourth argument, sets printdate_end to printdate_start
-				printdate_end="$printdate_start"
+				# No third argument, prompts user for date
+				echo "Enter one date or two dates separated by space for a date range (optional)"
+				read -rp "Enter date(s) in format YYYY-MM-DD: " printdate_start printdate_end
+
+				# If there is no end date set it to be the same as start
+				if [ -z "$printdate_end" ]
+				then
+					printdate_end="$printdate_start"
+				fi
+
+				# MIGHT HAVE TO ADD A SWITCH FOR DESCENDING - TEST THIS
 			fi
 
-		else
-			# No third argument, prompts user for date
-			echo "Enter one date or two dates separated by space for a date range (optional)"
-			read -rp "Enter date(s) in format YYYY-MM-DD: " printdate_start printdate_end
+			# Use the extract_entries function to redirect matching entries to a tmpfile
+			extract_entries "$printdate_start" "$printdate_end" "between" > tmpfile
 
-			# If there is no end date set it to be the same as start
-			if [ -z "$printdate_end" ]
+			# If there is content in the tempfile, print and remove file
+			if [ -s "tmpfile" ]
 			then
-				printdate_end="$printdate_start"
-			fi
-		fi
-
-		# Use the extract_entries function to redirect matching entries to a tmpfile
-		extract_entries "$printdate_start" "$printdate_end" "between" > tmpfile
-
-		# If there is content in the tempfile, print and remove file
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
-			exit 0
-		else
-			# If there are no content in the tempfile exit
-			echo "No entries found for the provided date. Check if you have used the correct date format"
-			rm tmpfile
-			exit 1
-		fi
-	elif [ "$2" = "id" ] || [ "$2" = "ID" ]
-	then
-		# If the print by id argument is added
-		
-		# Checks if id is provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets printid_start to be the third argument
-			printid_start="$3"
-
-			# If there is a fourth argument, sets printid_end to fourth argument
-			if [ -n "$4" ]
-			then
-				printid_end="$4"
+				cat tmpfile
+				rm tmpfile
+				exit 0
 			else
-				# If there is no fourth argument, sets printid_end to printid_start
-				printid_end="$printid_start"
+				# If there are no content in the tempfile exit
+				echo "No entries found for the provided date. Check if you have used the correct date format"
+				rm tmpfile
+				exit 1
 			fi
-		
-		else
-			# No third argument, prompts user for date
-			echo "Enter one entry number or two numbers separated by space for an id range (optional)"
-			read -rp "Enter entry number(s): " printid_start printid_end
+			;;
+		id|ID)
+			# If the print by id argument is added
+			# Checks if id is provided as argument
+			if [ -n "$3" ]
+			then
+				# Sets printid_start to be the third argument
+				printid_start="$3"
+
+				# If there is a fourth argument, sets printid_end to fourth argument
+				if [ -n "$4" ]
+				then
+					printid_end="$4"
+				else
+					# If there is no fourth argument, sets printid_end to printid_start
+					printid_end="$printid_start"
+				fi
 			
-			# If there is no end id set it to be the same as start
-			if [ -z "$printid_end" ]
-			then
-				printid_end="$printid_start"
+			else
+				# No third argument, prompts user for date
+				echo "Enter one entry number or two numbers separated by space for an id range (optional)"
+				read -rp "Enter entry number(s): " printid_start printid_end
+				
+				# If there is no end id set it to be the same as start
+				if [ -z "$printid_end" ]
+				then
+					printid_end="$printid_start"
+				fi
+
 			fi
 
-		fi
+			# Checks if the ids are descending and flips them to ascending
+			if [ "$printid_end" -lt "$printid_start" ]
+			then
+				# arguments are provided in descending order, flips them to ascending
+					temp_int="$deleteid_end"
+					deleteid_end="$deleteid_start"
+					deleteid_start="$temp_int"
+			fi
 
-		# Use the extract_entries function to redirect matching entries to a tmpfile
-		extract_entries "$printid_start" "$printid_end" "between" > tmpfile
+			# Use the extract_entries function to redirect matching entries to a tmpfile
+			extract_entries "$printid_start" "$printid_end" "between" > tmpfile
 
-		# If there is content in the tempfile, print and remove files
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
+			# If there is content in the tempfile, print and remove files
+			if [ -s "tmpfile" ]
+			then
+				cat tmpfile
+				rm tmpfile
+				exit 0
+			else
+				# If there are no entries matching the search, exit
+				echo "No entries found matching the entry number."
+				exit 1
+			fi
 			exit 0
-		else
-			# If there are no entries matching the search, exit
-			echo "No entries found matching the entry number."
-			exit 1
-		fi
-		exit 0
+			;;
+		search)
+			# If the print by search argument is added
+			# Checks if there is a search string provided
+			if [ -n "$3" ]
+			then
+				# Sets searchstring to be the third argument
+				searchstring="$3"
+			else
+				read -rp "Enter search string: " searchstring
+			fi
 
-	elif [ "$2" = "search" ]
-	then
-		# If the print by search argument is added
+			# Awk sentence that redirects all matching entries to a tempfile based on the search string
+			# The search string is matched anywhere in the entry
+			awk -v RS="\n\n~~~~~~\n" -v search="$searchstring" 'tolower($0) ~ tolower(search) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+			
+			# If there is content in the tempfile, print and remove files
+			if [ -s "tmpfile" ]
+			then
+				cat tmpfile
+				rm tmpfile
+				exit 0
+			else
+				# If there are no entries matching the search, exit
+				echo "No entries found matching the search string."
+				exit 1
+			fi
+			;;
+		author)
+			# If the print by author argument is added
+			# Checks if there is an author name provided
+			if [ -n "$3" ]
+			then
+				# Sets authorname to be the third argument
+				authorname="$3"
+			else
+				read -rp "Enter author name: " authorname
+			fi
 
-		# Checks if there is a search string provided
-		if [ -n "$3" ]
-		then
-			# Sets searchstring to be the third argument
-			searchstring="$3"
-		else
-			read -rp "Enter search string: " searchstring
-		fi
-
-		# Awk sentence that redirects all matching entries to a tempfile based on the search string
-		# The search string is matched anywhere in the entry
-		awk -v RS="\n\n~~~~~~\n" -v search="$searchstring" 'tolower($0) ~ tolower(search) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
-		
-		# If there is content in the tempfile, print and remove files
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
+			# Awk sentence that redirects all matching entries to a tempfile based on the author name
+			awk -v RS="\n\n~~~~~~\n" -v author="$authorname" '/^Author: / tolower($0) ~ tolower(author) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+			
+			# If there is content in the tempfile, print and remove files
+			if [ -s "tmpfile" ]
+			then
+				cat tmpfile
+				rm tmpfile
+				exit 0
+			else
+				# If there are no entries matching the author, exit
+				echo -e "No entries found matching the author name '$authorname'."
+				exit 1
+			fi
+			;;
+		*)
+			# If there are no secondary flags
+			# Prints out the content of the entire logfile in the terminal
+			cat "$logfile"
 			exit 0
-		else
-			# If there are no entries matching the search, exit
-			echo "No entries found matching the search string."
-			exit 1
-		fi
-	
-	elif [ "$2" = "author" ]
-	then
-		# If the print by author argument is added
-	
-		# Checks if there is an author name provided
-		if [ -n "$3" ]
-		then
-			# Sets authorname to be the third argument
-			authorname="$3"
-		else
-			read -rp "Enter author name: " authorname
-		fi
+			;;
+	esac
+}
 
-		# Awk sentence that redirects all matching entries to a tempfile based on the author name
-		awk -v RS="\n\n~~~~~~\n" -v author="$authorname" '/^Author: / tolower($0) ~ tolower(author) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
-		
-		# If there is content in the tempfile, print and remove files
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
-			exit 0
-		else
-			# If there are no entries matching the author, exit
-			echo -e "No entries found matching the author name '$authorname'."
-			exit 1
-		fi
-	else
-		# If there are no secondary flags
-		# Prints out the content of the entire logfile in the terminal
-		cat "$logfile"
-		exit 0
-	fi
+
 
 # SHORT MESSAGE FLAG
 elif [ "$1" = "--msg" ] || [ "$1" = "-m" ]
