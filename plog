@@ -226,6 +226,20 @@ extract_entries() {
 	' "$logfile"
 }
 
+# Function to check if an argument is a negative integer
+is_negative_int() {
+	[[ $1 =~ ^-[0-9]+$ ]]
+}
+
+# Loop through all arguments to check for negative integers
+for arg in "$@"
+do
+	if is_negative_int "$arg"
+	then
+		echo "Invalid input: Negative integers are not allowed"
+		exit 1
+	fi
+done
 
 ## FLAG CHECKS
 
