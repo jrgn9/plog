@@ -12,130 +12,147 @@ source "$program_folder/config"
 # Finds current directory
 current_directory="$(pwd)"
 
-## CHECKS FOR META FLAGS
-# HELP FLAG
-if [ "$1" = "--help" ] || [ "$1" = "-h" ]
-then
-	# Prints help message and exits
-	cat "$program_folder/help.txt"
-	exit 0
+# Case check for meta flags
+case $1 in
+    --help|-h)
+		# Prints help message and exits
+		cat "$program_folder/help.txt"
+		exit 0
+        ;;
+    --about)
+		# Prints about text and exits
+		cat "$program_folder/about.txt"
+		exit 0
+        ;;
+    --settings)
+		# Opens config file in default text editor
+		"$text_editor" "$program_folder/config"
+		exit 0
+        ;;
+    --init)
+		# Opens init file in default text editor
+		"$text_editor" "$program_folder/init.txt"
+		exit 0
+        ;;
+    --uninstall)
+		echo "You are about to uninstall plog. All your .plog files will not be affected. You can choose if you want to keep backups"
 
-# ABOUT FLAG
-elif [ "$1" = "--about" ]
-then
-	cat "$program_folder/about.txt"
-	exit 0
+		# Changing rights to the uninstall script
+		sudo chmod 755 "$program_folder/uninstall.sh"
 
-# SETTINGS FLAG
-elif [ "$1" = "--settings" ]
-then
-	# Opens config file in default text editor
-	"$text_editor" "$program_folder/config"
-	exit 0
+		# Run the uninstall script with sudo
+		sudo "$program_folder/uninstall.sh"
+		exit 0
+		;;
+esac
 
-# INIT FLAG
-elif [ "$1" = "--init" ]
-then
-	# Opens init file in default text editor
-	"$text_editor" "$program_folder/init.txt"
-	exit 0
+# Function for checking if there are log present and if not creates one
+check_and_create_log() {
+	# Finds all .log files except backup.log
+	logs=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
 
-# UNINSTALL FLAG
-elif [ "$1" = "--uninstall" ]
-then
-	echo "You are about to uninstall plog. All your .plog files will not be affected. You can choose if you want to keep backups"
-
-	# Changing rights to the uninstall script
-	sudo chmod 755 "$program_folder/uninstall.sh"
-
-	# Run the uninstall script with sudo
-	sudo "$program_folder/uninstall.sh"
-	exit 0
-fi
-
-## ERROR HANDLING FOR LOGS
-# Finds all .log files except backup.log
-logs=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
-
-# Counts the number of files found
-file_count=$(echo "$logs" | wc -l)
-	
-# Error handling if there are multiple .plog files
-if [ "$file_count" -gt 1 ]
-then
-	# Multiple files found, display error and quit
-	echo "Error: Multiple log files found."
-	echo "plog can only handle one .plog file in current directory"
-	echo "Please ensure that there is only one other .plog file besides backup.plog"
-	exit 1
-
-elif [ -z "$logs" ]
-# Error handling If there are no log files
-then
-	# Prompts user for file name
-	echo -e "No log file detected \nDo you want to add a new log file? (y/n): "
-	read -r answer
-
-	if [ "$answer" = "y" ] || [ "$answer" = "Y" ] || [ "$answer" = "yes" ]
-	then
-		echo "Enter name for new log file (default: log.plog)"
-		read -r filename
-	
-		# If no name is entered, default is log
-		if [ -z "$filename" ]
-		then
-			filename=log
-		fi
-		# Prints filename and creates file
-		echo "Creating file $filename.plog in current directory"
-		touch "$filename.plog"
-
-		read -rp "Enter title for the document: " title
-
-		# Adds the init message and title to the log file
-		{
-			cat "$program_folder/init.txt"
-			echo -e "---START OF LOG---\n"
-			echo -e "$title"
-			echo -e "\n~~~~~~"
-		} > "$filename.plog"
+	# Counts the number of files found
+	file_count=$(echo "$logs" | wc -l)
 		
-	else
-		echo "No log file created"
+	# Error handling if there are multiple .plog files
+	if [ "$file_count" -gt 1 ]
+	then
+		# Multiple files found, display error and quit
+		echo "Error: Multiple log files found."
+		echo "plog can only handle one .plog file in current directory"
+		echo "Please ensure that there is only one other .plog file besides backup.plog"
+		exit 1
+
+	elif [ -z "$logs" ]
+	# Error handling If there are no log files
+	then
+		# Prompts user for file name
+		echo -e "No log file detected \nDo you want to add a new log file? (y/n): "
+		read -r answer
+
+		if [[ "$answer" =~ ^[Yy](es)?$ ]]
+		then
+			echo "Enter name for new log file (default: log.plog)"
+			read -r filename
+		
+			# If no name is entered, default is log
+			if [ -z "$filename" ]
+			then
+				filename=log
+			fi
+			# Prints filename and creates file
+			echo "Creating file $filename.plog in current directory"
+			touch "$filename.plog"
+
+			read -rp "Enter title for the document: " title
+
+			# Adds the init message and title to the log file
+			{
+				cat "$program_folder/init.txt"
+				echo -e "---START OF LOG---\n"
+				echo -e "$title"
+				echo -e "\n~~~~~~"
+			} > "$filename.plog"
+			
+		else
+			echo "No log file created"
+			exit 1
+		fi
+	fi
+
+	# Returns the logfile that is found after doing the check
+	find "$current_directory" -name "*.plog" -not -name "*.backup"
+}
+
+# Set logfile to be the file found in current directory
+logfile=$(check_and_create_log)
+
+# Function to check if an argument is a negative integer
+is_negative_int() {
+	[[ $1 =~ ^-[0-9]+$ ]]
+}
+
+# Loop through all arguments to check for negative integers
+for arg in "$@"
+do
+	if is_negative_int "$arg"
+	then
+		echo "Invalid input: Negative integers are not allowed"
 		exit 1
 	fi
-fi
-
-## Set logfile to be the file found in current directory
-logfile=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
-
-
-# ADD ENTRY ID
-# Uses grep and awk to search for last entry number. Extracts number from # and sorts the numbers
-last_entry_number=$(grep -o "Entry #[0-9]*" "$logfile" | awk -F '#' '{print $NF}' | sort -n | tail -n 1)
-
-# If there is a last entry number
-if [ -n "$last_entry_number" ]
-then
-	# New entry number is last + 1
-	entry_number=$((last_entry_number + 1))
-else
-	# If there are no last entry number, entry number is 1
-	entry_number=1
-fi
+done
 
 # Function to extract entries from the log file based on a cutoff (date/ID) and position
 extract_entries() {
 	awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
 		BEGIN {
-			# If sentence to check if cutoff is date or id and sets it to 0 or 1
+			# Check if cutoff is date or id and sets it to 0 or 1
 			is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
 
-			# Variable for flagging the first entry of cutoff_end
+			# If date, convert them to integers to compare them
+			if (!is_id) {
+				cutoff_start = convert_date(cutoff_start)
+				cutoff_end = convert_date(cutoff_end)
+			}
+
+			# Flipping values if the input is descending
+			if (cutoff_start > cutoff_end) {
+				temp = cutoff_start
+				cutoff_start = cutoff_end
+				cutoff_end = temp
+			}
+
+			# Variables for flagging passing of entries
 			start_passed = 0
 			end_passed = 0
 			match_start_passed = 0
 			match_end_passed = 0
+		}
+
+		# Convert date to (YYYYMMDD) format to compare dates
+		function convert_date(date) {
+			split(date, parts, "-")
+			return parts[1] parts[2] parts[3]
 		}
 
 		# Function to print the current entry followed by delimiter
@@ -144,53 +161,46 @@ extract_entries() {
 		}
 
 		{
-			# Extract the actual ID from the entry number in log entry
-			if ($0 ~ /^\nEntry #[0-9]+/) {
-				split($2, parts, "#")
-				actual_id = parts[2]
-			}
-
-			
-			# Match checks:
-
-			# If cutoff is id set start and end to entry number less/more than and equal cutoff start/end
+			# Extract the actual ID or date from the entry
 			if (is_id) {
-				match_id_start = (actual_id >= cutoff_start)
-				match_id_end = (actual_id <= cutoff_end)
-			}
-			# If cutoff is date set start and end to match the date of the record
-			else {
+				if ($0 ~ /^\nEntry #[0-9]+/) {
+					split($2, parts, "#")
+					entry_value = parts[2]
+				}
+			} else {
 				# Split the record into lines
 				split($0, lines, "\n")
 
-				# Match date to the entry timestamp (third line of each entry)
-				match_date_start = (lines[3] ~ cutoff_start)
-				match_date_end = (lines[3] ~ cutoff_end)
+				# Extract only date (remove time and timezone)
+				split(lines[3], date_parts, " ") # date is third line of each entry
+				entry_date = date_parts[1] # Only keep first part (date)
+
+				# Convert date to integer
+				entry_value = convert_date(entry_date)
 			}
 
-			# Flag updates:
-			
-			# Checks if we passed the first match_start entry
-			if (match_id_start || match_date_start) {
-				start_passed = 1
-			}
-			# Checks if we passed all the match_start entries
-			if (start_passed && (!match_id_start || !match_date_start)) {
+			# Check if entry is within the specified range
+			in_range = (entry_value >= cutoff_start && entry_value <= cutoff_end)
+
+			# Match checks and flag updates:
+			if (in_range) {
+				# Flag start as passed
+				if (!start_passed) start_passed = 1
+				# Flag match start passed (for first date passed)
 				match_start_passed = 1
-			}
-			# Checks if we have reached the first entry of the cutoff_end
-			if (match_id_end || match_date_end) {
-				end_passed = 1
-			}
-			# Checks if we passed all match_end entries
-			if (end_passed && !match_id_end && !match_date_end) {
-				match_end_passed = 1
+			} else {
+				# If not in range
+				# If start and match start (first date) but not end passed, flag end as passed
+				if (start_passed && match_start_passed && !end_passed) {
+					end_passed = 1
+					match_end_passed = 1
+				}
 			}
 
 			# Position checks:
 
 			# If the position is before and the state is at the start print current entry
-			if (position == "before" && !match_id_start && !match_date_start && !start_passed && !match_start_passed) {
+			if (position == "before" && !start_passed) {
 				print_entries()
 			}
 			# If the position is between and we are passed match_start and until all of match_end, print current entry
@@ -205,14 +215,19 @@ extract_entries() {
 	' "$logfile"
 }
 
-## FLAG CHECKS
-
-# DELETE ENTRY FLAG
-if [ "$1" = "--delete" ] || [ "$1" = "-d" ]
-then
-	# Creates a backup before deleting entries
+# Backup function - This is going to be reworked
+backup() {
+	# Creates a backup before doing CRUD operations
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.plog
 	cp "$logfile" "$logfile".backup
+}
+
+# Functions for the different functionalities
+
+# Delete entry function
+delete_entry() {
+	# Calls on the backup function
+	backup
 
 	# Counts the length of the init message
 	init_length=$(wc -l < "$program_folder/init.txt")
@@ -225,25 +240,18 @@ then
 	then
 		echo "There are no entries to delete"
 		exit 1
-	else
-		if [ -z "$2" ]
-		then
-			# Invokes the program recursively if the user haven't provided a second argument
-			read -rp "Do you want to delete by id or the last entry? (id/last): " answer
-			plog -d "$answer"
-			exit 0
+	fi
 
-		elif [ "$2" = "last" ]
-		then
+	# Case to check for second argument
+	case $2 in
+		last)
 			# awk sentence to extract the last entry number
 			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
 
 			# Use extract_entries function to redirect everything but last entry to tmpfile
 			extract_entries "$last_entry_id" "$last_entry_id" "before" > tmpfile
-		elif [ "$2" = "id" ] || [ "$2" = "ID" ]
-		then
-			# SHOULD CREATE A CHECK FOR POSITIVE INTEGERS
-
+			;;
+		id)
 			# Checks if id is provided as argument
 			if [ -n "$3" ]
 			then
@@ -253,19 +261,14 @@ then
 				# if there is a fourth argument, sets deleteid_end to fourth argument, otherwise sets to deleteid_start
 				if [ -n "$4" ]
 				then
-					# Checks to see if the user has written ids in descending order and flips them
-					if [ "$4" -lt "$deleteid_start" ]
-					then
-						deleteid_end="$deleteid_start"
-						deleteid_start="$4"
-					else
-						deleteid_end="$4"
-					fi
+					# fourth argument is id end
+					deleteid_end="$4"
 				else
+					# No fourth argument, start and end is the same
 					deleteid_end="$deleteid_start"
 				fi
 			else
-				# Prompts the user for ids to delete
+				# No id provided, prompts the user for ids to delete
 				echo "Delete by entry number"
 				echo "Enter entry number to delete or two numbers separated by space for deleting a range of entries (range inclusive)"
 				read -rp "Enter entry number(s) to delete: " deleteid_start deleteid_end
@@ -287,100 +290,111 @@ then
 			# Uses the extract_entries function to extract all the entries before and after the entries to delete
 			extract_entries "$deleteid_start" "$deleteid_end" "before" > tmpfile
 			extract_entries "$deleteid_start" "$deleteid_end" "after" >> tmpfile
-		else
-			echo "Wrong delete argument. Use -h for help"
-			exit 1
-		fi
+			;;
+		*)
+			# Invokes the program recursively if the user haven't provided a second argument
+			read -rp "Do you want to delete by id or the last entry? (id/last): " answer
+			plog -d "$answer"
+			exit 0
+			;;
+	esac
 
-		# If the delete confirmation is still on in config, prompt the user if it is sure
-		if [ "$delete_confirmation" = "on" ]
+	# If the delete confirmation is still on in config, prompt the user if it is sure
+	if [ "$delete_confirmation" = "on" ]
+	then
+		# Checks for range, only one id or the last entry which are about to be deleted and prints message accordingly
+		# If there is no deleteid, it is the last entry
+		if [ -z "$deleteid_start" ]
 		then
-			# Checks for range, only one id or the last entry which are about to be deleted and prints message accordingly
-			# If there is no deleteid, it is the last entry
-			if [ -z "$deleteid_start" ]
-			then
-				echo "You are about to delete the last entry, entry #$last_entry_id"
+			echo "You are about to delete the last entry, entry #$last_entry_id"
 
-			# If start and end is the same, it is only one id
-			elif [ "$deleteid_start" = "$deleteid_end" ]
-				then
-					echo "You are about to delete entry #$deleteid_start"
-			else
-				# Else there is a range
-				echo "You are about to delete entry number from $deleteid_start to $deleteid_end"
-			fi
-			read -rp "Are you sure you want to delete? (y/n): " answer
-
-			# If the user confirms the deletion
-			if [ "$answer" = "y" ] || [ "$answer" = "Y" ]
+		# If start and end is the same, it is only one id
+		elif [ "$deleteid_start" = "$deleteid_end" ]
 			then
-				# Overwrites the extracted entries to the logfile
-				mv tmpfile "$logfile"
-			else
-				# User declines the deletion
-				echo "Delete operation aborted"
-				rm -f tmpfile
-				exit 1
-			fi
+				echo "You are about to delete entry #$deleteid_start"
 		else
-			# Delete confirmation is turned off in config
+			# Else there is a range
+			echo "You are about to delete entry number from $deleteid_start to $deleteid_end"
+		fi
+		read -rp "Are you sure you want to delete? (y/n): " answer
+
+		# If the user confirms the deletion
+		if [[ "$answer" =~ ^[Yy](es)?$ ]]
+		then
 			# Overwrites the extracted entries to the logfile
 			mv tmpfile "$logfile"
-		fi
-
-		# Check if the file was modified, which ids was used and prints message accordingly
-		if [[ $? -eq 0 ]]
-		then
-			if [ -z "$deleteid_start" ]
-			then
-				echo "Entry #$last_entry_id deleted"
-
-			elif [ "$deleteid_start" = "$deleteid_end" ]
-				then
-					echo "Entry #$deleteid_start deleted"
-			else
-				echo "Entry number from $deleteid_start to $deleteid_end deleted"
-			fi
 		else
-			# If the file was not modified, print error message
-			if [ -z "$deleteid_start" ]
-			then
-					echo "Could not delete last entry"
-
-			elif [ "$deleteid_start" = "$deleteid_end" ]
-			then
-				echo "Could not delete entry #$deleteid_start"
-
-			else
-				echo "Could not delete from entry number $deleteid_start to $deleteid_end"
-			fi
+			# User declines the deletion
+			echo "Delete operation aborted"
+			rm -f tmpfile
 			exit 1
 		fi
-		exit 0
+	else
+		# Delete confirmation is turned off in config
+		# Overwrites the extracted entries to the logfile
+		mv tmpfile "$logfile"
 	fi
 
-# RESTORE TO BACKUP FLAG
-elif [ "$1" = "--restore" ] || [ "$1" = "-r" ]
-then
+	# Check if the file was modified, which ids was used and prints message accordingly
+	if [[ $? -eq 0 ]]
+	then
+		if [ -z "$deleteid_start" ]
+		then
+			echo "Entry #$last_entry_id deleted"
+
+		elif [ "$deleteid_start" = "$deleteid_end" ]
+			then
+				echo "Entry #$deleteid_start deleted"
+		else
+			echo "Entry number from $deleteid_start to $deleteid_end deleted"
+		fi
+	else
+		# If the file was not modified, print error message
+		if [ -z "$deleteid_start" ]
+		then
+				echo "Could not delete last entry"
+
+		elif [ "$deleteid_start" = "$deleteid_end" ]
+		then
+			echo "Could not delete entry #$deleteid_start"
+
+		else
+			echo "Could not delete from entry number $deleteid_start to $deleteid_end"
+		fi
+		exit 1
+	fi
+	exit 0
+
+}
+
+# Restore log function
+# THIS WILL BE CHANGED WHEN BACKUP FUNCTIONALITY IS IN PLACE
+restore_log() {
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	mv "$logfile".backup "$logfile"
 	echo "Backup is restored to $logfile"
 	exit 0
+}
 
-# CHANGE AUTHOR FLAG
-elif [ "$1" = "--author" ] || [ "$1" = "-a" ]
-then
-	# Prompt user for name
-	read -rp "Enter author name: " author
-	
-	# Checks if user provided author name
+# Change author function
+change_author() {
+	# Checks if user provided author name as argument
+	if [ -e "$2" ]
+	then
+		author="$2"
+	else
+		# Prompt user for name
+		read -rp "Enter author name: " author
+	fi
+
+	# Checks if user provided author name or provided user to change to username
 	if [ -z "$author" ]
 	then
 		echo "Error: No author name provided. Author not changed"
 		exit 1
 	
-	elif [ "$author" = "user" ] || [ "$author" = "User" ]
+	elif [[ "$author" =~ ^[Uu]ser$ ]]
 	then
 		sed -i "s/author=.*/author=\$(whoami)/" "$program_folder/config"
 		
@@ -389,7 +403,7 @@ then
 		echo "Author successfully reverted to computer user name: $author"
 		exit 0
 	fi
-	
+
 	# Update author in the .config file
 	sed -i "s/author=.*/author=\"$author\"/" "$program_folder/config"
 
@@ -400,10 +414,10 @@ then
 	echo "Author: $author saved in config"
 	echo "To edit author use plog --author or edit the .config file manually"
 	exit 0
+}
 
-# IMPORT FLAG
-elif [ "$1" = "--import" ] || [ "$1" = "-i" ]
-then
+# Import file function
+import_file() {
 	# Checks if user has provided file as argument to skip being prompted
 	if [ -e "$2" ]
 	then
@@ -437,13 +451,12 @@ then
 		rm tmpfile
 		exit 1
 	fi
+}
 
-# EDIT FLAG
-elif [ "$1" = "--edit" ] || [ "$1" = "-e" ]
-then
-	# Creates a backup before editing entries
-	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
-	cp "$logfile" "$logfile".backup
+# Edit entry function
+edit_entries() {
+	# Calls on the backup function
+	backup
 
 	# Edit warning for the user (can be turned off in settings)
 	if [ "$edit_warning" = "on" ]
@@ -453,102 +466,100 @@ then
 		sleep 3
 	fi
 
-	# Edit arguments
-	if [ "$2" = "date" ]
-	then
-		# Edit by date argument
-		
-		# Checks if there is a date provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets editdate to be third argument
-			editdate_start="$3"
-			if [ -n "$4" ]
+	case $2 in
+		date)
+			# Edit by date argument. 
+			# Checks if there is a date provided as argument
+			if [ -n "$3" ]
 			then
 				# Sets editdate to be third argument
-				editdate_end="$4"
+				editdate_start="$3"
+				if [ -n "$4" ]
+				then
+					# Sets editdate to be fourth argument
+					editdate_end="$4"
+				else
+					# No fourth argument, start and end is the same
+					editdate_end="$editdate_start"
+				fi
 			else
-				editdate_end="$editdate_start"
+				# No third argument, prompts user for date
+				echo "Edit by date"
+				echo "Enter one date or two dates separated by space for a date range (optional)"
+				read -rp "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
+
+				# If there is no end, start and end is the same
+				if [ -z "$editdate_end" ]
+				then
+					editdate_end="$editdate_start"
+				fi
 			fi
-		else
-			# No third argument, prompts user for date
-			echo "Edit by date"
-			echo "Enter one date or two dates separated by space for a date range (optional)"
-			read -rp "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
-
-			if [ -z "$editdate_end" ]
+			# Awk sentence that redirects all matching dates to a tempfile
+			extract_entries "$editdate_start" "$editdate_end" "between" > tmpfile
+			
+			# Store the original content in a variable before editing
+			original_entries=$(extract_entries "$editdate_start" "$editdate_end" "between")
+			;;
+		id|ID)
+			# Edit by id argument
+			# Checks if there is an id provided as argument
+			if [ -n "$3" ]
 			then
-				editdate_end="$editdate_start"
-			fi
-		fi
-		# Awk sentence that redirects all matching dates to a tempfile
-		extract_entries "$editdate_start" "$editdate_end" "between" > tmpfile
-		
-		# Store the original content in a variable before editing
-		original_entries=$(extract_entries "$editdate_start" "$editdate_end" "between")
-
-	elif [ "$2" = "id"  ] || [ "$2" = "ID" ]
-	then
-		# Edit by id argument
-
-		# SHOULD DO A CHECK FOR POSITIVE INTEGERS
-
-		# Checks if there is an id provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets editid to be third argument
-			editid_start="$3"
-
-			if [ -n "$4" ]
-			then
-				editid_end="$4"
+				# Sets editid start to be third argument
+				editid_start="$3"
+				if [ -n "$4" ]
+				then
+					# Sets end to be fourth argument
+					editid_end="$4"
+				else
+					# No fourth argument, start and end is the same
+					editid_end="$editid_start"
+				fi
 			else
-				editid_end="$editid_start"
+				# No third argument, prompts user for id
+				echo "Edit by id"
+				echo "Enter one entry number or two numbers separated by space for id range (optional)"
+				read -rp "Enter entry number id: " editid_start editid_end
+
+				# If no end, start and end is the same
+				if [ -z "$editid_end" ]
+				then
+					editid_end="$editid_start"
+				fi
 			fi
-		else
-			# No third argument, prompts user for id
-			echo "Edit by id"
-			echo "Enter one entry number or two numbers separated by space for id range (optional)"
-			read -rp "Enter entry number id: " editid_start editid_end
 
-			if [ -z "$editid_end" ]
-			then
-				editid_end="$editid_start"
-			fi
-		fi
+			# Awk sentence that redirects all matching ids to a tempfile
+			extract_entries "$editid_start" "$editid_end" "between" > tmpfile
 
-		# Awk sentence that redirects all matching ids to a tempfile
-		extract_entries "$editid_start" "$editid_end" "between" > tmpfile
+			# Store the original content in a variable before editing
+			original_entries=$(extract_entries "$editid_start" "$editid_end" "between")
+			;;
+		last)
+			# Edit last entry
+			echo "Edit last entry"
 
-		# Store the original content in a variable before editing
-		original_entries=$(extract_entries "$editid_start" "$editid_end" "between")
+			# awk sentence to extract the last entry number
+			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
 
-	elif [ "$2" = "last" ]
-	then
-		# Edit last entry
-		echo "Edit last entry"
+			# Use extract_entries function to redirect the last entry to tmpfile
+			extract_entries "$last_entry_id" "$last_entry_id" "between" > tmpfile
 
-		# awk sentence to extract the last entry number
-		last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
-
-		# Use extract_entries function to redirect the last entry to tmpfile
-		extract_entries "$last_entry_id" "$last_entry_id" "between" > tmpfile
-
-    	# Store the original content in a variable before editing
-		original_entries=$(extract_entries "$last_entry_id" "$last_entry_id" "between")
-
-	else
-		# No arguments
+			# Store the original content in a variable before editing
+			original_entries=$(extract_entries "$last_entry_id" "$last_entry_id" "between")
+			;;
+		*)
+			# No arguments
 		
-		### Should i bother error handling???
+			### Should i bother error handling???
 
-		# Opens the log file with the default editor
-		"$text_editor" "$logfile"
+			# Opens the log file with the default editor
+			"$text_editor" "$logfile"
 
-		### Check if there was any changes and print message accordingly
+			### Check if there was any changes and print message accordingly?
 
-		exit 0
-	fi
+			exit 0
+			;;
+	esac
 
 	# If there is content in the tempfile from date, id or last, open it in the editor
 	if [ -s "tmpfile" ]
@@ -558,6 +569,9 @@ then
     
 		# Get the edited entries from the tmp file and adds in the delimiter
 		edited_entries=$(cat "tmpfile")
+
+		# Trim any trailing delimiters from edited_entries
+		#edited_entries=$(echo "$edited_entries" | sed '/^~~~~~~$/d')
 
 		# Checks number of entries before and after editing
 		num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
@@ -581,7 +595,7 @@ then
 
 		# Continues to overwrite changes if there are no errors 
 		# or the user wants to continue anyways
-		if [ "$edit_error" != "1" ] || [ "$error_answer" = "y" ]
+		if [ "$edit_error" != "1" ] || [[ "$error_answer" =~ ^[Yy](es)?$ ]]
 		then
 			if [ -n "$editdate_start" ]
 			then
@@ -620,181 +634,176 @@ then
 			echo "No changes were saved."
 		fi
 		
-	# Remove the temporary file
-	rm tmpfile
-else
-	# If there are no entries found for the provided date, display a message		
-	echo "No entries found for the provided search parameter. Check if you have used the correct date format or id number."
-	rm tmpfile
-	exit 1
-fi
-exit 0
-
-# PRINT FLAG
-elif [ "$1" = "--print" ] || [ "$1" = "-p" ]
-then
-	# Checks if there is a date flag for printing by date
-	if [ "$2" = "date" ]
-	then
-		# Checks if there is a date provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets printdate to be third argument
-			printdate_start="$3"
-
-			# If there is a fourth argument, sets printdate_end to fourth argument
-			if [ -n "$4" ]
-			then
-				printdate_end="$4"
-			else
-				# If there is no fourth argument, sets printdate_end to printdate_start
-				printdate_end="$printdate_start"
-			fi
-
-		else
-			# No third argument, prompts user for date
-			echo "Enter one date or two dates separated by space for a date range (optional)"
-			read -rp "Enter date(s) in format YYYY-MM-DD: " printdate_start printdate_end
-
-			# If there is no end date set it to be the same as start
-			if [ -z "$printdate_end" ]
-			then
-				printdate_end="$printdate_start"
-			fi
-		fi
-
-		# Use the extract_entries function to redirect matching entries to a tmpfile
-		extract_entries "$printdate_start" "$printdate_end" "between" > tmpfile
-
-		# If there is content in the tempfile, print and remove file
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
-			exit 0
-		else
-			# If there are no content in the tempfile exit
-			echo "No entries found for the provided date. Check if you have used the correct date format"
-			rm tmpfile
-			exit 1
-		fi
-	elif [ "$2" = "id" ] || [ "$2" = "ID" ]
-	then
-		# If the print by id argument is added
-		
-		# Checks if id is provided as argument
-		if [ -n "$3" ]
-		then
-			# Sets printid_start to be the third argument
-			printid_start="$3"
-
-			# If there is a fourth argument, sets printid_end to fourth argument
-			if [ -n "$4" ]
-			then
-				printid_end="$4"
-			else
-				# If there is no fourth argument, sets printid_end to printid_start
-				printid_end="$printid_start"
-			fi
-		
-		else
-			# No third argument, prompts user for date
-			echo "Enter one entry number or two numbers separated by space for an id range (optional)"
-			read -rp "Enter entry number(s): " printid_start printid_end
-			
-			# If there is no end id set it to be the same as start
-			if [ -z "$printid_end" ]
-			then
-				printid_end="$printid_start"
-			fi
-
-		fi
-
-		# Use the extract_entries function to redirect matching entries to a tmpfile
-		extract_entries "$printid_start" "$printid_end" "between" > tmpfile
-
-		# If there is content in the tempfile, print and remove files
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
-			exit 0
-		else
-			# If there are no entries matching the search, exit
-			echo "No entries found matching the entry number."
-			exit 1
-		fi
-		exit 0
-
-	elif [ "$2" = "search" ]
-	then
-		# If the print by search argument is added
-
-		# Checks if there is a search string provided
-		if [ -n "$3" ]
-		then
-			# Sets searchstring to be the third argument
-			searchstring="$3"
-		else
-			read -rp "Enter search string: " searchstring
-		fi
-
-		# Awk sentence that redirects all matching entries to a tempfile based on the search string
-		# The search string is matched anywhere in the entry
-		awk -v RS="\n\n~~~~~~\n" -v search="$searchstring" 'tolower($0) ~ tolower(search) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
-		
-		# If there is content in the tempfile, print and remove files
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
-			exit 0
-		else
-			# If there are no entries matching the search, exit
-			echo "No entries found matching the search string."
-			exit 1
-		fi
-	
-	elif [ "$2" = "author" ]
-	then
-		# If the print by author argument is added
-	
-		# Checks if there is an author name provided
-		if [ -n "$3" ]
-		then
-			# Sets authorname to be the third argument
-			authorname="$3"
-		else
-			read -rp "Enter author name: " authorname
-		fi
-
-		# Awk sentence that redirects all matching entries to a tempfile based on the author name
-		awk -v RS="\n\n~~~~~~\n" -v author="$authorname" '/^Author: / tolower($0) ~ tolower(author) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
-		
-		# If there is content in the tempfile, print and remove files
-		if [ -s "tmpfile" ]
-		then
-			cat tmpfile
-			rm tmpfile
-			exit 0
-		else
-			# If there are no entries matching the author, exit
-			echo -e "No entries found matching the author name '$authorname'."
-			exit 1
-		fi
+		# Remove the temporary file
+		rm tmpfile
 	else
-		# If there are no secondary flags
-		# Prints out the content of the entire logfile in the terminal
-		cat "$logfile"
-		exit 0
+		# If there are no entries found for the provided date, display a message		
+		echo "No entries found for the provided search parameter. Check if you have used the correct date format or id number."
+		rm tmpfile
+		exit 1
 	fi
 
-# SHORT MESSAGE FLAG
-elif [ "$1" = "--msg" ] || [ "$1" = "-m" ]
-then	
-	# Removes backup if there is one from previously deleting last entry
-	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f "$logfile".backup
+	exit 0
+}
+
+# Print entry function
+print_entries() {
+	case $2 in
+		date)
+			# Checks if there is a date provided as argument
+			if [ -n "$3" ]
+			then
+				# Sets printdate to be third argument
+				printdate_start="$3"
+
+				# If there is a fourth argument, sets printdate_end to fourth argument
+				if [ -n "$4" ]
+				then
+					printdate_end="$4"
+				else
+					# If there is no fourth argument, sets printdate_end to printdate_start
+					printdate_end="$printdate_start"
+				fi
+
+			else
+				# No third argument, prompts user for date
+				echo "Enter one date or two dates separated by space for a date range (optional)"
+				read -rp "Enter date(s) in format YYYY-MM-DD: " printdate_start printdate_end
+
+				# If there is no end date set it to be the same as start
+				if [ -z "$printdate_end" ]
+				then
+					printdate_end="$printdate_start"
+				fi
+			fi
+
+			# Use the extract_entries function to redirect matching entries to a tmpfile
+			extract_entries "$printdate_start" "$printdate_end" "between" > tmpfile
+
+			# If there is content in the tempfile, print and remove file
+			if [ -s "tmpfile" ]
+			then
+				cat tmpfile
+				rm tmpfile
+				exit 0
+			else
+				# If there are no content in the tempfile exit
+				echo "No entries found for the provided date. Check if you have used the correct date format"
+				rm tmpfile
+				exit 1
+			fi
+			;;
+		id|ID)
+			# If the print by id argument is added
+			# Checks if id is provided as argument
+			if [ -n "$3" ]
+			then
+				# Sets printid_start to be the third argument
+				printid_start="$3"
+
+				# If there is a fourth argument, sets printid_end to fourth argument
+				if [ -n "$4" ]
+				then
+					printid_end="$4"
+				else
+					# If there is no fourth argument, sets printid_end to printid_start
+					printid_end="$printid_start"
+				fi
+			
+			else
+				# No third argument, prompts user for date
+				echo "Enter one entry number or two numbers separated by space for an id range (optional)"
+				read -rp "Enter entry number(s): " printid_start printid_end
+				
+				# If there is no end id set it to be the same as start
+				if [ -z "$printid_end" ]
+				then
+					printid_end="$printid_start"
+				fi
+
+			fi
+
+			# Use the extract_entries function to redirect matching entries to a tmpfile
+			extract_entries "$printid_start" "$printid_end" "between" > tmpfile
+
+			# If there is content in the tempfile, print and remove files
+			if [ -s "tmpfile" ]
+			then
+				cat tmpfile
+				rm tmpfile
+				exit 0
+			else
+				# If there are no entries matching the search, exit
+				echo "No entries found matching the entry number."
+				exit 1
+			fi
+			;;
+		search)
+			# If the print by search argument is added
+			# Checks if there is a search string provided
+			if [ -n "$3" ]
+			then
+				# Sets searchstring to be the third argument
+				searchstring="$3"
+			else
+				read -rp "Enter search string: " searchstring
+			fi
+
+			# Awk sentence that redirects all matching entries to a tempfile based on the search string
+			# The search string is matched anywhere in the entry
+			awk -v RS="\n\n~~~~~~\n" -v search="$searchstring" 'tolower($0) ~ tolower(search) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+			
+			# If there is content in the tempfile, print and remove files
+			if [ -s "tmpfile" ]
+			then
+				cat tmpfile
+				rm tmpfile
+				exit 0
+			else
+				# If there are no entries matching the search, exit
+				echo "No entries found matching the search string."
+				exit 1
+			fi
+			;;
+		author)
+			# If the print by author argument is added
+			# Checks if there is an author name provided
+			if [ -n "$3" ]
+			then
+				# Sets authorname to be the third argument
+				authorname="$3"
+			else
+				read -rp "Enter author name: " authorname
+			fi
+
+			# Awk sentence that redirects all matching entries to a tempfile based on the author name
+			awk -v RS="\n\n~~~~~~\n" -v author="$authorname" '/^Author: / tolower($0) ~ tolower(author) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
+			
+			# If there is content in the tempfile, print and remove files
+			if [ -s "tmpfile" ]
+			then
+				cat tmpfile
+				rm tmpfile
+				exit 0
+			else
+				# If there are no entries matching the author, exit
+				echo -e "No entries found matching the author name '$authorname'."
+				exit 1
+			fi
+			;;
+		*)
+			# If there are no secondary flags
+			# Prints out the content of the entire logfile in the terminal
+			cat "$logfile"
+			exit 0
+			;;
+	esac
+}
+
+# Function for adding short entry message directly
+short_entry() {
+	# Calls on the backup function
+	backup
 	
 	# Checks if the message is empty or not present
 	if [ -z "$2" ] || [ "$2" = "" ]
@@ -809,9 +818,10 @@ then
 		exit 1
 	fi
 	entry="$2"	
-else
-	# NO FLAGS
+}
 
+# Function for adding entry by opening text editor (no flags invoked)
+add_entry() {
 	# Checks if there are no flags provided to ensure positional arguments
 	if [ -n "$2" ]
 	then
@@ -819,11 +829,9 @@ else
 		exit 1
 	fi
 
-	# No flags detected
-	# Removes backup if there is one from previously deleting last entry
-	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f "$logfile".backup
-
+	# Calls on the backup function
+	backup
+	
 	# Creates a temporary file for log entry
 	tmpfile=$(mktemp)
 
@@ -843,13 +851,62 @@ else
 
 	# Removes the temporary file
 	rm "$tmpfile"
-fi
+}
+
+# Case check for functionality flags
+case $1 in
+    --delete|-d)
+        delete_entry "$@"
+        ;;
+    --restore|-r)
+        restore_log "$@"
+        ;;
+    --author|-a)
+        change_author "$@"
+        ;;
+    --import|-i)
+        import_file "$@"
+        ;;
+    --edit|-e)
+        edit_entries "$@"
+        ;;
+    --print|-p)
+        print_entries "$@"
+        ;;
+    --msg|-m)
+        short_entry "$@"
+        ;;
+    *)
+        add_entry "$@"
+        ;;
+esac
 
 # ADD ENTRY TO LOG FILE
 
-# Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
-timestamp=$(date --rfc-3339=s)
+# Checks if there is an entry or logfile present
+if [ -n "$entry" ] && [ -n "$logfile" ]
+then
+	# Add entry id
+	# Uses grep and awk to search for last entry number. Extracts number from # and sorts the numbers
+	last_entry_number=$(grep -o "Entry #[0-9]*" "$logfile" | awk -F '#' '{print $NF}' | sort -n | tail -n 1)
 
-# Redirects the log entry to the log file
-echo -e "\nEntry #$entry_number\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
-echo -e "\nEntry #$entry_number added to ${logfile}"
+	# If there is a last entry number
+	if [ -n "$last_entry_number" ]
+	then
+		# New entry number is last + 1
+		entry_number=$((last_entry_number + 1))
+	else
+		# If there are no last entry number, entry number is 1
+		entry_number=1
+	fi
+
+	# Display the current date using the RFC-3339 format (`YYYY-MM-DD hh:mm:ss TZ`)
+	timestamp=$(date --rfc-3339=s)
+
+	# Redirects the log entry to the log file
+	echo -e "\nEntry #$entry_number\n$timestamp\nAuthor: $author\n\n$entry\n\n~~~~~~" >> "$logfile"
+	echo -e "\nEntry #$entry_number added to ${logfile}"
+else
+	echo "Error: No logfile or no entry present. No entry added."
+	exit 1
+fi
