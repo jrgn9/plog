@@ -17,30 +17,31 @@ then
     exit 1
 fi
 
-# MAKE CURL OPTIONAL WITH WARNING THAT IT CAN'T CHECK VERSION WITHOUT IT
-
-# Check that the user has curl installed
+# Check that the user has curl installed and compare versions
 if ! command -v curl &> /dev/null
 then
-    echo "Please install curl to proceed"
-    exit 1
+    echo "Curl is not installed. Could not check if $current_version is the latest version"
+    read -rp "Do you want to continue anyways? (y/n): " proceed_install
+else
+    # Fetch latest release tag from GitHub via their api
+    latest_release=$(curl -s "https://api.github.com/repos/$USER/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
+
+    # Compare versions
+    if [ "$latest_release" != "$current_version" ]
+    then
+        echo "You are about to install version $current_version, but the latest release is $latest_release. You can find the latest version at https://github.com/$USER/$REPO/releases"
+        read -rp "Do you still want to continue? (y/n): " proceed_install
+    else
+        echo "You are installing the latest version: $current_version"
+        proceed_install="y"
+    fi
 fi
 
-# Fetch latest release tag from GitHub via their api
-latest_release=$(curl -s "https://api.github.com/repos/$USER/$REPO/releases/latest" | grep '"tag_name":' | sed -E 's/.*"([^"]+)".*/\1/')
-
-# Compare versions
-if [ "$latest_release" != "$current_version" ]
+# Check if the user want to proceed. Abort if not
+if [ "$proceed_install" != "y" ]
 then
-    echo "You are about to install version $current_version, but the latest release is $latest_release. You can find the latest version at https://github.com/$USER/$REPO/releases"
-    read -rp "Do you still want to continue? (y/n): " proceed_install
-    if [ "$proceed_install" != "y" ]
-    then
-        echo "Installation aborted"
-        exit 1
-    fi
-else
-    echo "You are installing the latest version: $current_version"
+    echo "Installation aborted"
+    exit 1
 fi
 
 # Proceeds to the install process 
