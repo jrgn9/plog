@@ -203,14 +203,19 @@ extract_entries() {
 	' "$logfile"
 }
 
+# Backup function - This is going to be reworked
+backup() {
+	# Creates a backup before doing CRUD operations
+	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.plog
+	cp "$logfile" "$logfile".backup
+}
+
 # Functions for the different functionalities
 
 # Delete entry function
 delete_entry() {
-	# Creates a backup before deleting entries
-	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.plog
-	cp "$logfile" "$logfile".backup
-	echo "Creating copy of $logfile as $logfile.backup" # DEBUG
+	# Calls on the backup function
+	backup
 
 	# Counts the length of the init message
 	init_length=$(wc -l < "$program_folder/init.txt")
@@ -364,7 +369,6 @@ restore_log() {
 	# Overwrite the other file with the backup file
 	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
 	mv "$logfile".backup "$logfile"
-	echo "backing up copy of $logfile from $logfile.backup" # DEBUG
 	echo "Backup is restored to $logfile"
 	exit 0
 }
@@ -447,10 +451,8 @@ import_file() {
 
 # Edit entry function
 edit_entries() {
-	# Creates a backup before editing entries
-	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.log
-	cp "$logfile" "$logfile".backup
-	echo "Creating copy of $logfile as $logfile.backup" # DEBUG
+	# Calls on the backup function
+	backup
 
 	# Edit warning for the user (can be turned off in settings)
 	if [ "$edit_warning" = "on" ]
@@ -616,6 +618,9 @@ edit_entries() {
 				# Add the edited entry to tmpfile2
 				echo "$edited_entries" >> tmpfile2
 			fi
+
+			# Removes extra delimiter at the end of the document
+			#sed -i '$!{h;d;};x;/~~~~~~/d' tmpfile2
 
 			# Moves tmpfile2 back to the log file, overwriting it
 			mv tmpfile2 "$logfile"
@@ -804,10 +809,8 @@ print_entries() {
 
 # Function for adding short entry message directly
 short_entry() {
-	# Removes backup if there is one from previously deleting last entry
-	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f "$logfile".backup
-	echo "Removing copy of $logfile named $logfile.backup" # DEBUG
+	# Calls on the backup function
+	backup
 	
 	# Checks if the message is empty or not present
 	if [ -z "$2" ] || [ "$2" = "" ]
@@ -833,12 +836,9 @@ add_entry() {
 		exit 1
 	fi
 
-	# No flags detected
-	# Removes backup if there is one from previously deleting last entry
-	# THIS CAN BE REMOVED WHEN BACKUP IS MOVED TO .plog FOLDER AFTER INSTALL
-	rm -f "$logfile".backup
-	echo "Removing copy of $logfile named $logfile.backup" # DEBUG
-
+	# Calls on the backup function
+	backup
+	
 	# Creates a temporary file for log entry
 	tmpfile=$(mktemp)
 
