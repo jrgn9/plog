@@ -8,7 +8,7 @@ USER_HOME=$(getent passwd $(logname) | cut -d: -f6)
 # Defining repository details
 USER="jrgn9"
 REPO="plog"
-current_version="v1.0.0-alpha"
+current_version="v1.1.0-alpha"
 
 # Checks if the user runs the install script as sudo
 if [ ! -w /usr/local/bin ]
