@@ -126,14 +126,33 @@ done
 extract_entries() {
 	awk -v RS="\n\n~~~~~~\n" -v cutoff_start="$1" -v cutoff_end="$2" -v position="$3" '
 		BEGIN {
-			# If sentence to check if cutoff is date or id and sets it to 0 or 1
+			# Check if cutoff is date or id and sets it to 0 or 1
 			is_id = (cutoff_start ~ /^[0-9]+$/) ? 1 : 0
 
-			# Variable for flagging the first entry of cutoff_end
+			# If date, convert them to integers to compare them
+			if (!is_id) {
+				cutoff_start = convert_date(cutoff_start)
+				cutoff_end = convert_date(cutoff_end)
+			}
+
+			# Flipping values if the input is descending
+			if (cutoff_start > cutoff_end) {
+				temp = cutoff_start
+				cutoff_start = cutoff_end
+				cutoff_end = temp
+			}
+
+			# Variables for flagging passing of entries
 			start_passed = 0
 			end_passed = 0
 			match_start_passed = 0
 			match_end_passed = 0
+		}
+
+		# Convert date to (YYYYMMDD) format to compare dates
+		function convert_date(date) {
+			split(date, parts, "-")
+			return parts[1] parts[2] parts[3]
 		}
 
 		# Function to print the current entry followed by delimiter
@@ -142,53 +161,46 @@ extract_entries() {
 		}
 
 		{
-			# Extract the actual ID from the entry number in log entry
-			if ($0 ~ /^\nEntry #[0-9]+/) {
-				split($2, parts, "#")
-				actual_id = parts[2]
-			}
-
-			
-			# Match checks:
-
-			# If cutoff is id set start and end to entry number less/more than and equal cutoff start/end
+			# Extract the actual ID or date from the entry
 			if (is_id) {
-				match_id_start = (actual_id >= cutoff_start)
-				match_id_end = (actual_id <= cutoff_end)
-			}
-			# If cutoff is date set start and end to match the date of the record
-			else {
+				if ($0 ~ /^\nEntry #[0-9]+/) {
+					split($2, parts, "#")
+					entry_value = parts[2]
+				}
+			} else {
 				# Split the record into lines
 				split($0, lines, "\n")
 
-				# Match date to the entry timestamp (third line of each entry)
-				match_date_start = (lines[3] ~ cutoff_start)
-				match_date_end = (lines[3] ~ cutoff_end)
+				# Extract only date (remove time and timezone)
+				split(lines[3], date_parts, " ") # date is third line of each entry
+				entry_date = date_parts[1] # Only keep first part (date)
+
+				# Convert date to integer
+				entry_value = convert_date(entry_date)
 			}
 
-			# Flag updates:
-			
-			# Checks if we passed the first match_start entry
-			if (match_id_start || match_date_start) {
-				start_passed = 1
-			}
-			# Checks if we passed all the match_start entries
-			if (start_passed && (!match_id_start || !match_date_start)) {
+			# Check if entry is within the specified range
+			in_range = (entry_value >= cutoff_start && entry_value <= cutoff_end)
+
+			# Match checks and flag updates:
+			if (in_range) {
+				# Flag start as passed
+				if (!start_passed) start_passed = 1
+				# Flag match start passed (for first date passed)
 				match_start_passed = 1
-			}
-			# Checks if we have reached the first entry of the cutoff_end
-			if (match_id_end || match_date_end) {
-				end_passed = 1
-			}
-			# Checks if we passed all match_end entries
-			if (end_passed && !match_id_end && !match_date_end) {
-				match_end_passed = 1
+			} else {
+				# If not in range
+				# If start and match start (first date) but not end passed, flag end as passed
+				if (start_passed && match_start_passed && !end_passed) {
+					end_passed = 1
+					match_end_passed = 1
+				}
 			}
 
 			# Position checks:
 
 			# If the position is before and the state is at the start print current entry
-			if (position == "before" && !match_id_start && !match_date_start && !start_passed && !match_start_passed) {
+			if (position == "before" && !start_passed) {
 				print_entries()
 			}
 			# If the position is between and we are passed match_start and until all of match_end, print current entry
@@ -249,16 +261,8 @@ delete_entry() {
 				# if there is a fourth argument, sets deleteid_end to fourth argument, otherwise sets to deleteid_start
 				if [ -n "$4" ]
 				then
-					# Checks to see order of ids
-					if [ "$4" -lt "$deleteid_start" ]
-					then
-						# arguments are provided in descending order, flips them to ascending
-						deleteid_end="$deleteid_start"
-						deleteid_start="$4"
-					else
-						# arguments are provided in ascending order, fourth is id end
-						deleteid_end="$4"
-					fi
+					# fourth argument is id end
+					deleteid_end="$4"
 				else
 					# No fourth argument, start and end is the same
 					deleteid_end="$deleteid_start"
@@ -472,9 +476,10 @@ edit_entries() {
 				editdate_start="$3"
 				if [ -n "$4" ]
 				then
-					# Sets editdate to be third argument
+					# Sets editdate to be fourth argument
 					editdate_end="$4"
 				else
+					# No fourth argument, start and end is the same
 					editdate_end="$editdate_start"
 				fi
 			else
@@ -483,6 +488,7 @@ edit_entries() {
 				echo "Enter one date or two dates separated by space for a date range (optional)"
 				read -rp "Enter date(s) in format YYYY-MM-DD: " editdate_start editdate_end
 
+				# If there is no end, start and end is the same
 				if [ -z "$editdate_end" ]
 				then
 					editdate_end="$editdate_start"
@@ -499,13 +505,14 @@ edit_entries() {
 			# Checks if there is an id provided as argument
 			if [ -n "$3" ]
 			then
-				# Sets editid to be third argument
+				# Sets editid start to be third argument
 				editid_start="$3"
-
 				if [ -n "$4" ]
 				then
+					# Sets end to be fourth argument
 					editid_end="$4"
 				else
+					# No fourth argument, start and end is the same
 					editid_end="$editid_start"
 				fi
 			else
@@ -514,6 +521,7 @@ edit_entries() {
 				echo "Enter one entry number or two numbers separated by space for id range (optional)"
 				read -rp "Enter entry number id: " editid_start editid_end
 
+				# If no end, start and end is the same
 				if [ -z "$editid_end" ]
 				then
 					editid_end="$editid_start"
@@ -619,9 +627,6 @@ edit_entries() {
 				echo "$edited_entries" >> tmpfile2
 			fi
 
-			# Removes extra delimiter at the end of the document
-			#sed -i '$!{h;d;};x;/~~~~~~/d' tmpfile2
-
 			# Moves tmpfile2 back to the log file, overwriting it
 			mv tmpfile2 "$logfile"
 			echo "Changes saved."
@@ -670,8 +675,6 @@ print_entries() {
 				then
 					printdate_end="$printdate_start"
 				fi
-
-				# MIGHT HAVE TO ADD A SWITCH FOR DESCENDING - TEST THIS
 			fi
 
 			# Use the extract_entries function to redirect matching entries to a tmpfile
@@ -720,15 +723,6 @@ print_entries() {
 
 			fi
 
-			# Checks if the ids are descending and flips them to ascending
-			if [ "$printid_end" -lt "$printid_start" ]
-			then
-				# arguments are provided in descending order, flips them to ascending
-					temp_int="$deleteid_end"
-					deleteid_end="$deleteid_start"
-					deleteid_start="$temp_int"
-			fi
-
 			# Use the extract_entries function to redirect matching entries to a tmpfile
 			extract_entries "$printid_start" "$printid_end" "between" > tmpfile
 
@@ -743,7 +737,6 @@ print_entries() {
 				echo "No entries found matching the entry number."
 				exit 1
 			fi
-			exit 0
 			;;
 		search)
 			# If the print by search argument is added
