@@ -153,9 +153,11 @@ plog is made by Jørgen Skontorp
 
 ✅ Create an install script with binary file 
 
-❌ Alpha test with program installer
+✅ Alpha test with program installer
 
 ❌ Add auto backup functionality
+
+❌ Add markdown export
 
 ❌ Open beta test
 
