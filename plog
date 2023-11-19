@@ -3,11 +3,24 @@
 # Path for the .plog folder with program files
 program_folder="/home/$USER/.plog"
 
-# Fetches settings from .config
-source "$program_folder/config"
+# Check if the config file exists
+if [ -e "$program_folder/config" ]
+then
+	# Fetches settings from .config
+	source "$program_folder/config"
+else
+	# Can't find config file, set fallback defaults
+	echo "Warning: Can't find the config file in $program_folder"
+	echo "Settings are set to fallback default. Some functionality might not work."
+	echo "You can download the config at https://github.com/jrgn9/plog"
 
-# CREATE FALLBACK FOR CONFIG??
-# REMOVE THE BACKUP STUFF AND MOVE IT TO .plog/backup
+	author=$(whoami)
+	text_editor="${EDITOR:-nano}"
+	edit_warning="on"
+	delete_confirmation="on"
+fi
+
+# TODO: REMOVE THE BACKUP STUFF AND MOVE IT TO .plog/backup
 
 # Finds current directory
 current_directory="$(pwd)"
