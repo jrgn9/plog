@@ -13,6 +13,7 @@ else
 	echo "Warning: Can't find the config file in $program_folder"
 	echo "Settings are set to fallback default. Some functionality might not work."
 	echo "You can download the config at https://github.com/jrgn9/plog"
+	sleep 2
 
 	author=$(whoami)
 	text_editor="${EDITOR:-nano}"
