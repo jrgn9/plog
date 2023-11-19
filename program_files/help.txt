@@ -37,6 +37,7 @@ Options:
 			- id: Prints entry based on the id provided
 			- date: Prints all entries based on the date provided (YYYY-MM-DD format)
 				Provide two numbers or dates separated by space for printing a range of entries
+			- last: Print the last entry in the log
 
 -i	--import	Imports the content of a file and adds it as a log entry.
 			Uses relative path based on your current directory.
