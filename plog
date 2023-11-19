@@ -393,6 +393,13 @@ restore_log() {
 
 # Change author function
 change_author() {
+	# Checks if the config file exists
+	if [ ! -e "$program_folder/config" ]
+	then
+		echo "Could not find the config file. Exiting."
+		exit 1
+	fi
+
 	# Checks if user provided author name as argument
 	if [ -e "$2" ]
 	then
@@ -662,6 +669,24 @@ edit_entries() {
 
 # Print entry function
 print_entries() {
+	# Function for checking if entries were found
+	function check_print() {
+		# Print message sent from corresponding argument
+		print_argument="$1"
+
+		# If there is content in the tempfile, print and remove files
+		if [ -s "tmpfile" ]
+		then
+			cat tmpfile
+			rm tmpfile
+			exit 0
+		else
+			# If there are no entries matching the search, exit
+			echo "No entries found $print_argument"
+			exit 1
+		fi
+	}
+
 	case $2 in
 		date)
 			# Checks if there is a date provided as argument
@@ -694,18 +719,8 @@ print_entries() {
 			# Use the extract_entries function to redirect matching entries to a tmpfile
 			extract_entries "$printdate_start" "$printdate_end" "between" > tmpfile
 
-			# If there is content in the tempfile, print and remove file
-			if [ -s "tmpfile" ]
-			then
-				cat tmpfile
-				rm tmpfile
-				exit 0
-			else
-				# If there are no content in the tempfile exit
-				echo "No entries found for the provided date. Check if you have used the correct date format"
-				rm tmpfile
-				exit 1
-			fi
+			# Use check print to see if there is content in the tmpfile and print file/error message
+			check_print "matching the provided date. Check if you have used the correct date format"
 			;;
 		id|ID)
 			# If the print by id argument is added
@@ -740,17 +755,8 @@ print_entries() {
 			# Use the extract_entries function to redirect matching entries to a tmpfile
 			extract_entries "$printid_start" "$printid_end" "between" > tmpfile
 
-			# If there is content in the tempfile, print and remove files
-			if [ -s "tmpfile" ]
-			then
-				cat tmpfile
-				rm tmpfile
-				exit 0
-			else
-				# If there are no entries matching the search, exit
-				echo "No entries found matching the entry number."
-				exit 1
-			fi
+			# Use check print to see if there is content in the tmpfile and print file/error message
+			check_print "matching the entry id number."
 			;;
 		search)
 			# If the print by search argument is added
@@ -767,17 +773,8 @@ print_entries() {
 			# The search string is matched anywhere in the entry
 			awk -v RS="\n\n~~~~~~\n" -v search="$searchstring" 'tolower($0) ~ tolower(search) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
 			
-			# If there is content in the tempfile, print and remove files
-			if [ -s "tmpfile" ]
-			then
-				cat tmpfile
-				rm tmpfile
-				exit 0
-			else
-				# If there are no entries matching the search, exit
-				echo "No entries found matching the search string."
-				exit 1
-			fi
+			# Use check print to see if there is content in the tmpfile and print file/error message
+			check_print "matching the search string."
 			;;
 		author)
 			# If the print by author argument is added
@@ -793,17 +790,18 @@ print_entries() {
 			# Awk sentence that redirects all matching entries to a tempfile based on the author name
 			awk -v RS="\n\n~~~~~~\n" -v author="$authorname" '/^Author: / tolower($0) ~ tolower(author) { print $0 "\n\n~~~~~~" }' "$logfile" >> tmpfile
 			
-			# If there is content in the tempfile, print and remove files
-			if [ -s "tmpfile" ]
-			then
-				cat tmpfile
-				rm tmpfile
-				exit 0
-			else
-				# If there are no entries matching the author, exit
-				echo -e "No entries found matching the author name '$authorname'."
-				exit 1
-			fi
+			# Use check print to see if there is content in the tmpfile and print file/error message
+			check_print "matching the author name '$authorname'."
+			;;
+		last)
+			# awk sentence to extract the last entry number
+			last_entry_id=$(awk -F'#' '/^Entry #/ {id=$2} END {print id}' "$logfile")
+
+			# Use extract_entries function to redirect last entry to tmpfile
+			extract_entries "$last_entry_id" "$last_entry_id" "between" > tmpfile
+
+			# Use check print to see if there is content in the tmpfile and print file/error message
+			check_print ""
 			;;
 		*)
 			# If there are no secondary flags
