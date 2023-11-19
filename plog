@@ -63,7 +63,7 @@ esac
 # Function for checking if there are log present and if not creates one
 check_and_create_log() {
 	# Finds all .log files except backup.log
-	logs=$(find "$current_directory" -name "*.plog" -not -name "*.backup")
+	logs=$(find "$current_directory" -maxdepth 1 -type f -name "*.plog" -not -name "*.backup")
 
 	# Counts the number of files found
 	file_count=$(echo "$logs" | wc -l)
@@ -81,13 +81,11 @@ check_and_create_log() {
 	# Error handling If there are no log files
 	then
 		# Prompts user for file name
-		echo -e "No log file detected \nDo you want to add a new log file? (y/n): "
-		read -r answer
+		read -rp "No log file detected. Do you want to add a new log file? (y/n): " answer
 
 		if [[ "$answer" =~ ^[Yy](es)?$ ]]
 		then
-			echo "Enter name for new log file (default: log.plog)"
-			read -r filename
+			read -rp "Enter name for new log file (default: log.plog): " filename
 		
 			# If no name is entered, default is log
 			if [ -z "$filename" ]
@@ -113,13 +111,20 @@ check_and_create_log() {
 			exit 1
 		fi
 	fi
-
-	# Returns the logfile that is found after doing the check
-	find "$current_directory" -name "*.plog" -not -name "*.backup"
 }
 
+# Call on the function to check if there are a log or to create one if not
+check_and_create_log
+
 # Set logfile to be the file found in current directory
-logfile=$(check_and_create_log)
+logfile=$(find "$current_directory" -maxdepth 1 -type f -name "*.plog" -not -name "*.backup")
+
+# Error handling to check if the function actually manage to create a log file
+if [ -z "$logfile" ]
+then
+	echo "Error: No log file found or created"
+	exit 1
+fi
 
 # Function to check if an argument is a negative integer
 is_negative_int() {
@@ -444,8 +449,7 @@ import_file() {
 	then
 		filename="$2"
 	else
-		echo "Enter the file name or relative path of the file to import (default: $current_directory/):"
-		read -r filename
+		read -rp "Enter the file name or relative path of the file to import (default: $current_directory/):" filename
 	fi
 	
 	# If the user didn't provide a filename, use the current directory as the default
