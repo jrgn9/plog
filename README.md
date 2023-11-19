@@ -6,7 +6,7 @@
 plog is a command line tool for creating project logs and entries from CLI. Keep track of projects (or anything) by having simple log files. Perfect for large school projects that require progress documentation. Written in Bash.
 
 ## 📥 Install
-Download the latest version or use git to clone the repo. Make sure to give the install script execution rights:
+Download the [latest version](https://github.com/jrgn9/plog/releases/latest) or use git to clone the repo. Make sure to give the install script execution rights:
 
 `sudo chmod u+x install.sh`
 
