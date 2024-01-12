@@ -51,6 +51,7 @@ then
 else
     echo "Creating .plog directory for program files in $USER_HOME"
     mkdir "$USER_HOME/.plog"
+    mkdir "$USER_HOME/.plog/backup"
 fi
 
 echo "Moving program files to $USER_HOME/.plog"
