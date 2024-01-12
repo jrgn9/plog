@@ -3,6 +3,8 @@
 # Path for the .plog folder with program files
 program_folder="/home/$USER/.plog"
 
+backup_amount=5
+
 # Check if the config file exists
 if [ -e "$program_folder/config" ]
 then
@@ -19,6 +21,7 @@ else
 	text_editor="${EDITOR:-nano}"
 	edit_warning="on"
 	delete_confirmation="on"
+	backup_amount=5
 fi
 
 # TODO: REMOVE THE BACKUP STUFF AND MOVE IT TO .plog/backup
@@ -60,6 +63,79 @@ case $1 in
 		;;
 esac
 
+# Function for finding backup path in log file
+extract_backup_directory() {
+	# Logfile is the argument given to the function
+	logfile="$1"
+
+	# Uses grep and awk to find the backup directory name
+	directory_name=$(grep -m 1 '~BACKUP DIRECTORY:' "$logfile" | awk -F': ' '{print $2}')
+	
+	# Returns the directory name when called upon
+	echo "$directory_name"
+}
+
+replace_backup_directory_in_logfile() {
+	directory_name="$1"
+	logfile="$2"
+
+}
+
+# Function for creating a backup directory
+create_backup_directory() {
+	logfile="$1"
+
+	read -rp "Enter a unique directory name (Recommended: Same as log file name): " directory_name
+	replace_backup_directory_in_logfile "$directory_name" "$logfile"
+
+	# Loop that keeps checking if the directory name is unique
+	while true
+	do
+		# Search for the directory name to avoid duplicates
+		directories=$(find "$program_folder/backup" -maxdepth 1 -type d -name "$directory_name")
+
+		# Counts the number of files found
+		dir_count=$(echo "$directories" | wc -l)
+
+		# Error handling if there are backup folders with the same name
+		if [ "$dir_count" -ge 1 ]
+		then
+			read -rp "Error: Backup directory already exists. Please enter a unique name: " directory_name
+			replace_backup_directory_in_logfile "$directory_name" "$logfile"
+		else
+			# Breaks the loop when the name is unique
+			break
+		fi
+	done
+
+	# CREATE DIRECTORY AND CALL ON EDIT NAME FUNCTION
+	# Creates backup directory
+	mkdir "$program_folder/backup/$directory_name"
+
+	echo "$directory_name"
+}
+
+# Function to check if a backup directory exists
+check_backup_directory() {
+	# Use function to find backup directory name in the log file
+	backup_directory=extract_backup_directory
+
+	# If there are no backup directory, create one
+	if [ -z $backup_directory ]
+	then
+		# CREATE BACKUP FOLDER
+		read -rp "No backup directory found. Do you want to create one? (y/n): " answer
+
+		if [[ "$answer" =~ ^[Yy](es)?$ ]]
+		then
+			create_backup_directory
+		fi
+	fi
+	
+	# Return backup directory name
+	echo "backup_directory"
+}
+
 # Function for checking if there are log present and if not creates one
 check_and_create_log() {
 	# Finds all .log files except backup.log
@@ -78,7 +154,7 @@ check_and_create_log() {
 		exit 1
 
 	elif [ -z "$logs" ]
-	# Error handling If there are no log files
+	# If there are no log files
 	then
 		# Prompts user for file name
 		read -rp "No log file detected. Do you want to add a new log file? (y/n): " answer
@@ -101,10 +177,13 @@ check_and_create_log() {
 			# Adds the init message and title to the log file
 			{
 				cat "$program_folder/init.txt"
+				echo -e "~BACKUP DIRECTORY: $filename\n"
 				echo -e "---START OF LOG---\n"
 				echo -e "$title"
 				echo -e "\n~~~~~~"
 			} > "$filename.plog"
+
+			create_backup_directory "$filename.plog"
 			
 		else
 			echo "No log file created"
@@ -234,11 +313,40 @@ extract_entries() {
 	' "$logfile"
 }
 
-# Backup function - This is going to be reworked
+
+
+# Backup function that creates backup files in the backup directory
 backup() {
-	# Creates a backup before doing CRUD operations
-	# IN THE BIN FILE SET THE PATH TO ~/.plog/backup.plog
-	cp "$logfile" "$logfile".backup
+	backup_directory_name=extract_backup_directory "$logfile"
+
+	if [ -z "$backup_directory_name" ]
+	then
+		read -rp "Error: No backup directory found. Do you want to create one? (y/n): " answer
+		if [[ "$answer" =~ ^[Yy](es)?$ ]]
+		then
+			create_backup_directory
+		else
+			echo "No backup directory. Creating a backup from before last operation in the current directory."
+			cp "$logfile" "$logfile".backup
+			exit 0
+		fi
+	fi
+
+	backup_directory="$program_folder/$backup_directory_name"
+
+	# Finds all backup files
+	logs=$(find "$backup_directory" -maxdepth 1 -type f -name "*.plog")
+
+	# Counts the number of files found
+	file_count=$(echo "$logs" | wc -l)
+
+	# Checks for amount of backups to keep
+	if [ "$file_count" -gt "$backup_amount" ]
+	then
+		echo "It's full baby"
+	fi
+
+	cp "$logfile" "$backup_directory/$(date +%Y%m%d_%H-%M-%S)-$logfile"
 }
 
 # Functions for the different functionalities
@@ -594,9 +702,6 @@ edit_entries() {
     
 		# Get the edited entries from the tmp file and adds in the delimiter
 		edited_entries=$(cat "tmpfile")
-
-		# Trim any trailing delimiters from edited_entries
-		#edited_entries=$(echo "$edited_entries" | sed '/^~~~~~~$/d')
 
 		# Checks number of entries before and after editing
 		num_entries_before=$(echo "$original_entries" | grep -o "~~~~~~" | wc -l)
